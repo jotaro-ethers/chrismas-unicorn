@@ -293,7 +293,34 @@
         </div>
       </div>
 
-      <div class="form-section">
+      <!-- Payment Section -->
+      <div class="form-section" id="paymentSection" style="display: none;">
+        <h3 style="margin-bottom: 20px; color: #FFD700;">💳 Payment</h3>
+        
+        <div style="text-align: center; padding: 20px;">
+          <p style="margin-bottom: 15px; color: rgba(255,255,255,0.8);">
+            Scan QR code to pay <strong style="color: #FFD700;">29,000 VND</strong>
+          </p>
+          <p style="margin-bottom: 5px; font-size: 12px; color: rgba(255,255,255,0.6);">
+            Transfer content (Nội dung chuyển khoản):
+          </p>
+          <p style="margin-bottom: 15px;">
+            <strong id="paymentContent" style="color: #FF69B4; font-size: 16px;"></strong>
+            <button type="button" onclick="copyPaymentContent()" style="background: transparent; border: 1px solid #FF69B4; color: #FF69B4; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-left: 8px;">📋 Copy</button>
+          </p>
+          <div id="qrCodeContainer" style="background: white; padding: 20px; border-radius: 12px; display: inline-block;">
+            <img id="qrCodeImage" src="" alt="Payment QR Code" style="max-width: 280px; height: auto;">
+          </div>
+          <div id="paymentStatus" class="status-message status-info" style="margin-top: 15px;">
+            ⏳ Waiting for payment...
+          </div>
+          <button type="button" id="cancelPaymentBtn" onclick="cancelPayment()" style="margin-top: 15px; background: rgba(255,100,100,0.2); border: 1px solid rgba(255,100,100,0.5); color: #FF6B6B; padding: 8px 20px; border-radius: 6px; cursor: pointer;">
+            ❌ Cancel
+          </button>
+        </div>
+      </div>
+
+      <div class="form-section" id="deploySection">
         <h3 style="margin-bottom: 20px; color: #FFD700;">Deploy Settings</h3>
 
         <div class="form-group">
@@ -306,7 +333,7 @@
 
         <div class="button-group">
           <button type="reset" class="btn-generate" style="background: rgba(255,255,255,0.1); color: #fff;">Reset</button>
-          <button type="submit" class="btn-generate">🚀 Generate & Deploy</button>
+          <button type="submit" class="btn-generate" id="submitBtn">💳 Proceed to Payment</button>
         </div>
 
         <div class="progress-section" id="progressSection">
@@ -337,6 +364,17 @@ const MAX_IMAGES = 15;
 const MAX_NAME_LEN = 63;
 const NAME_ALLOWED_RE = /^[a-z0-9-]+$/i;
 
+// Payment settings
+const PAYMENT_AMOUNT = 29000;
+const POLL_INTERVAL = 3000; // 3 seconds
+const SEPAY_ACCOUNT = '96247QTKN';
+const SEPAY_BANK = 'BIDV';
+const SEPAY_TEMPLATE = 'compact';
+const SEPAY_BRID = '19mN62fT_sS4GCXWrxpohg';
+
+let pollTimer = null;
+let currentProjectName = '';
+
 // sanitize a raw project name into a safe slug for S3/subdomain
 function sanitizeProjectName(raw) {
   if (!raw) return '';
@@ -360,6 +398,84 @@ function showMessage(msg, type) {
 
 function updateProgress(percent) {
   document.getElementById('progressFill').style.width = percent + '%';
+}
+
+// Generate Sepay QR URL
+function generateQRUrl(projectName) {
+  const encodedDes = encodeURIComponent(projectName);
+  return `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${SEPAY_BANK}&amount=${PAYMENT_AMOUNT}&des=${encodedDes}&template=${SEPAY_TEMPLATE}&brid=${SEPAY_BRID}`;
+}
+
+// Show payment section
+function showPaymentSection(projectName) {
+  currentProjectName = projectName;
+  
+  const paymentSection = document.getElementById('paymentSection');
+  const deploySection = document.getElementById('deploySection');
+  const qrImage = document.getElementById('qrCodeImage');
+  const paymentContent = document.getElementById('paymentContent');
+  const paymentStatus = document.getElementById('paymentStatus');
+  
+  // Update UI
+  paymentContent.textContent = projectName;
+  qrImage.src = generateQRUrl(projectName);
+  paymentStatus.innerHTML = '⏳ Waiting for payment...';
+  paymentStatus.className = 'status-message status-info';
+  
+  // Show payment, hide deploy button section content
+  paymentSection.style.display = 'block';
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').textContent = '⏳ Awaiting Payment...';
+  
+  // Start polling
+  startPaymentPolling(projectName);
+}
+
+// Copy payment content
+function copyPaymentContent() {
+  const content = document.getElementById('paymentContent').textContent;
+  navigator.clipboard.writeText(content).then(() => {
+    alert('Payment content copied!');
+  });
+}
+
+// Cancel payment
+function cancelPayment() {
+  stopPaymentPolling();
+  document.getElementById('paymentSection').style.display = 'none';
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('submitBtn').textContent = '💳 Proceed to Payment';
+  currentProjectName = '';
+}
+
+// Start polling for payment verification
+function startPaymentPolling(projectName) {
+  if (pollTimer) clearInterval(pollTimer);
+  
+  pollTimer = setInterval(async () => {
+    try {
+      const response = await fetch(`/api/payment/verify/${encodeURIComponent(projectName)}?min_amount=${PAYMENT_AMOUNT}`);
+      const data = await response.json();
+      
+      if (data.verified) {
+        stopPaymentPolling();
+        document.getElementById('paymentStatus').innerHTML = '✅ Payment confirmed! Generating...';
+        document.getElementById('paymentStatus').className = 'status-message status-success';
+        
+        // Proceed with generation after short delay
+        setTimeout(() => proceedWithGeneration(), 1000);
+      }
+    } catch (err) {
+      console.error('Payment verification error:', err);
+    }
+  }, POLL_INTERVAL);
+}
+
+function stopPaymentPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
 }
 
 // File previews with size check
@@ -403,7 +519,7 @@ musicInput.addEventListener('change', (e) => {
   }
 });
 
-// Form submission
+// Form submission - check project exists first, then show payment
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -416,6 +532,7 @@ form.addEventListener('submit', async (e) => {
   }
 
   // If raw name already valid and within length, accept it
+  let projectName = rawName;
   if (!NAME_ALLOWED_RE.test(rawName) || rawName.length > MAX_NAME_LEN || rawName.startsWith('-') || rawName.endsWith('-')) {
     // try to sanitize
     const sanitized = sanitizeProjectName(rawName);
@@ -423,8 +540,8 @@ form.addEventListener('submit', async (e) => {
       showMessage('Project name contains invalid characters and cannot be sanitized. Use letters, digits or hyphens only.', 'error');
       return;
     }
-    // set sanitized value back to field so server gets safe name
     projectInput.value = sanitized;
+    projectName = sanitized;
     showMessage(`Project name sanitized to "${sanitized}"`, 'info');
   }
 
@@ -433,7 +550,7 @@ form.addEventListener('submit', async (e) => {
   if (files.length < MIN_IMAGES || files.length > MAX_IMAGES) {
     showMessage(`Please upload between ${MIN_IMAGES} and ${MAX_IMAGES} body images`, 'error');
     return;
-    }
+  }
 
   // Final size check
   const oversized = files.find(f => f.size > MAX_FILE_SIZE);
@@ -442,10 +559,41 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
-  // Build FormData from the form, enforce deployTo=s3, and replace bodyImages with discrete fields
+  // Check if project already exists (already generated)
+  try {
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').textContent = '⏳ Checking...';
+    
+    const checkResponse = await fetch(`/api/project/check/${encodeURIComponent(projectName)}`);
+    const checkData = await checkResponse.json();
+    
+    if (checkData.exists) {
+      showMessage(`This project has already been generated. URL: ${checkData.url}`, 'error');
+      document.getElementById('resultUrl').textContent = checkData.url;
+      document.getElementById('resultSection').style.display = 'block';
+      document.getElementById('submitBtn').disabled = false;
+      document.getElementById('submitBtn').textContent = '💳 Proceed to Payment';
+      return;
+    }
+  } catch (err) {
+    console.error('Error checking project:', err);
+    // Continue anyway if check fails
+  }
+  
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('submitBtn').textContent = '💳 Proceed to Payment';
+
+  // Show payment section
+  showPaymentSection(projectName);
+});
+
+// Proceed with generation after payment verified
+async function proceedWithGeneration() {
+  const files = Array.from(bodyImagesInput.files || []);
+  
+  // Build FormData from the form
   const formData = new FormData(form);
   formData.set('deployTo', 's3');
-  // remove original multi-file field to avoid duplicate handling on server
   formData.delete('bodyImages');
 
   for (let i = 0; i < files.length; i++) {
@@ -470,6 +618,11 @@ form.addEventListener('submit', async (e) => {
       showMessage(`✅ Success! Generated in ${data.generationTime}ms`, 'success');
       document.getElementById('resultUrl').textContent = data.publicUrl;
       document.getElementById('resultSection').style.display = 'block';
+      
+      // Hide payment section and reset button
+      document.getElementById('paymentSection').style.display = 'none';
+      document.getElementById('submitBtn').disabled = false;
+      document.getElementById('submitBtn').textContent = '💳 Proceed to Payment';
     } else {
       updateProgress(0);
       showMessage(`❌ ${data.error || 'Generation failed'}`, 'error');
@@ -478,7 +631,7 @@ form.addEventListener('submit', async (e) => {
     updateProgress(0);
     showMessage(`❌ Upload failed: ${err.message}`, 'error');
   }
-});
+}
 
 function copyUrl() {
   const url = document.getElementById('resultUrl').textContent;

@@ -4,8 +4,16 @@ import re
 import datetime
 import time
 import asyncio
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
@@ -88,6 +96,7 @@ AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID") or getattr(settings, "AWS_ACC
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY") or getattr(settings, "AWS_SECRET_ACCESS_KEY", None)
 AWS_REGION = os.getenv("AWS_REGION") or getattr(settings, "AWS_REGION", "us-east-1")
 PORT = int(os.getenv("PORT", getattr(settings, "PORT", 3000)))
+DOMAIN = os.getenv("DOMAIN") or getattr(settings, "DOMAIN", "artonbnb.xyz")
 
 # Create boto3 client only if credentials or role exist
 s3_client = None
@@ -196,12 +205,7 @@ async def upload_to_s3(project_id: str, folder: str, files_dict: dict) -> str:
         )
 
     # Build public URL
-    if S3_PUBLIC_URL:
-        # Respect configured public URL (e.g., CloudFront distribution root)
-        return f"{S3_PUBLIC_URL.rstrip('/')}/{base_key}/index.html"
-    else:
-        # default S3 website/object URL
-        return f"https://{bucket}.s3.amazonaws.com/{base_key}/index.html"
+    return f"https://{project_id}.{DOMAIN}"
 
 
 async def save_locally(project_id: str, files_dict: dict) -> str:
@@ -341,7 +345,7 @@ async def generate(request: Request):
     # Deploy
     try:
         # Generate safe project id from provided projectName
-        project_id = make_project_id(projectName or "project")
+        project_id = projectName
         if deployTo == "s3":
             if not s3_client or not S3_BUCKET:
                 return JSONResponse(
@@ -350,6 +354,30 @@ async def generate(request: Request):
             public_url = await upload_to_s3(project_id=project_id, folder=s3Folder, files_dict=files_dict)
         else:
             public_url = await save_locally(project_id=project_id, files_dict=files_dict)
+
+        # Save URL to transaction record
+        try:
+            from app.database import SessionLocal
+            from app.models.transaction import Transaction
+
+            if SessionLocal:
+                db = SessionLocal()
+                try:
+                    # Find the transaction with matching content and update URL
+                    transaction = (
+                        db.query(Transaction)
+                        .filter(Transaction.content.ilike(f"%{projectName}%"))
+                        .order_by(Transaction.created_at.desc())
+                        .first()
+                    )
+                    if transaction:
+                        transaction.url = public_url
+                        db.commit()
+                        logger.info(f"Updated transaction {transaction.id} with URL: {public_url}")
+                finally:
+                    db.close()
+        except Exception as db_err:
+            logger.warning(f"Failed to save URL to transaction: {db_err}")
 
         generation_time = int((time.time() - start_time) * 1000)
         return {"success": True, "projectId": project_id, "publicUrl": public_url, "generationTime": generation_time}
@@ -374,6 +402,103 @@ async def preview_file(project_id: str, file_path: str):
     if file_full_path.exists():
         return FileResponse(file_full_path)
     return JSONResponse(status_code=404, content={"error": "File not found"})
+
+
+@app.get("/api/payment/verify/{project_name}")
+async def verify_payment(project_name: str, min_amount: int = 29000):
+    """Check if payment with matching content and amount exists in database."""
+    try:
+        from app.database import SessionLocal
+        from app.models.transaction import Transaction
+
+        if SessionLocal is None:
+            logger.error("Database not configured")
+            return JSONResponse(status_code=500, content={"error": "Database not configured", "verified": False})
+
+        db = SessionLocal()
+        try:
+            # Query transactions for content containing project_name and amount >= min_amount
+            logger.info(f"Verifying payment for project: {project_name}, min_amount: {min_amount}")
+
+            query = (
+                db.query(Transaction)
+                .filter(
+                    Transaction.content.ilike(f"%{project_name}%"),
+                    Transaction.amount >= min_amount,
+                )
+                .order_by(Transaction.created_at.desc())
+            )
+
+            # Log the query for debugging
+            logger.info(f"Query: content ILIKE '%{project_name}%' AND amount >= {min_amount}")
+
+            transaction = query.first()
+
+            if transaction:
+                logger.info(
+                    f"Found matching transaction: id={transaction.id}, "
+                    f"content={transaction.content}, amount={transaction.amount}"
+                )
+                return {
+                    "verified": True,
+                    "transaction": {
+                        "id": transaction.id,
+                        "content": transaction.content,
+                        "amount": transaction.amount,
+                        "transaction_date": str(transaction.transaction_date),
+                        "reference_code": transaction.reference_code,
+                        "url": transaction.url,
+                    },
+                }
+
+            logger.info(f"No matching transaction found for project: {project_name}")
+            return {"verified": False}
+        finally:
+            db.close()
+    except Exception as e:
+        logger.exception(f"Error verifying payment: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e), "verified": False})
+
+
+@app.get("/api/project/check/{project_name}")
+async def check_project_exists(project_name: str):
+    """Check if project name already exists in transactions (to prevent duplicates)."""
+    try:
+        from app.database import SessionLocal
+        from app.models.transaction import Transaction
+
+        if SessionLocal is None:
+            logger.error("Database not configured")
+            return JSONResponse(status_code=500, content={"error": "Database not configured"})
+
+        db = SessionLocal()
+        try:
+            logger.info(f"Checking if project exists: {project_name}")
+
+            # Check if any transaction with this content already has a URL (already generated)
+            existing = (
+                db.query(Transaction)
+                .filter(
+                    Transaction.content.ilike(f"%{project_name}%"),
+                    Transaction.url.isnot(None),
+                )
+                .first()
+            )
+
+            if existing:
+                logger.info(f"Project already exists with URL: {existing.url}")
+                return {
+                    "exists": True,
+                    "url": existing.url,
+                    "message": "This project has already been generated",
+                }
+
+            return {"exists": False}
+        finally:
+            db.close()
+    except Exception as e:
+        logger.exception(f"Error checking project: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 if __name__ == "__main__":
