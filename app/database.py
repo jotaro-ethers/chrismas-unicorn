@@ -23,7 +23,7 @@ def get_db() -> Generator[Session, None, None]:
     """Get database session dependency."""
     if SessionLocal is None:
         raise RuntimeError("Database not configured")
-    
+
     db = SessionLocal()
     try:
         yield db
