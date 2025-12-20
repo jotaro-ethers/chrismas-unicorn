@@ -505,4 +505,4 @@ if __name__ == "__main__":
     import uvicorn
 
     # When running locally, run the app object from this module
-    uvicorn.run("app.main:app", host="127.0.0.1", port=PORT, reload=True)
+    uvicorn.run("app.main:app", port=PORT, reload=True)
