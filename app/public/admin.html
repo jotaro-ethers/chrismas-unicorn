@@ -367,12 +367,15 @@ const NAME_ALLOWED_RE = /^[a-z0-9-]+$/i;
 // Payment settings
 const PAYMENT_AMOUNT = 29000;
 const POLL_INTERVAL = 3000; // 3 seconds
+const POLL_TIMEOUT = 10 * 60 * 1000; // 10 minutes timeout
 const SEPAY_ACCOUNT = '96247QTKN';
 const SEPAY_BANK = 'BIDV';
 const SEPAY_TEMPLATE = 'compact';
 const SEPAY_BRID = '19mN62fT_sS4GCXWrxpohg';
 
 let pollTimer = null;
+let pollTimeoutTimer = null;
+let pollStartTime = null;
 let currentProjectName = '';
 
 // sanitize a raw project name into a safe slug for S3/subdomain
@@ -451,9 +454,29 @@ function cancelPayment() {
 // Start polling for payment verification
 function startPaymentPolling(projectName) {
   if (pollTimer) clearInterval(pollTimer);
+  if (pollTimeoutTimer) clearTimeout(pollTimeoutTimer);
+  
+  pollStartTime = Date.now();
+  
+  // Set timeout to auto-cancel after POLL_TIMEOUT
+  pollTimeoutTimer = setTimeout(() => {
+    stopPaymentPolling();
+    document.getElementById('paymentStatus').innerHTML = '⏰ Payment timeout. Please try again.';
+    document.getElementById('paymentStatus').className = 'status-message status-error';
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').textContent = '💳 Proceed to Payment';
+  }, POLL_TIMEOUT);
   
   pollTimer = setInterval(async () => {
     try {
+      // Update remaining time in status
+      const elapsed = Date.now() - pollStartTime;
+      const remaining = Math.max(0, POLL_TIMEOUT - elapsed);
+      const minutes = Math.floor(remaining / 60000);
+      const seconds = Math.floor((remaining % 60000) / 1000);
+      document.getElementById('paymentStatus').innerHTML = 
+        `⏳ Waiting for payment... (${minutes}:${seconds.toString().padStart(2, '0')} remaining)`;
+      
       const response = await fetch(`/api/payment/verify/${encodeURIComponent(projectName)}?min_amount=${PAYMENT_AMOUNT}`);
       const data = await response.json();
       
@@ -476,6 +499,11 @@ function stopPaymentPolling() {
     clearInterval(pollTimer);
     pollTimer = null;
   }
+  if (pollTimeoutTimer) {
+    clearTimeout(pollTimeoutTimer);
+    pollTimeoutTimer = null;
+  }
+  pollStartTime = null;
 }
 
 // File previews with size check
