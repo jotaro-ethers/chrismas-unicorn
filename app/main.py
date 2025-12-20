@@ -97,6 +97,7 @@ AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY") or getattr(settings, 
 AWS_REGION = os.getenv("AWS_REGION") or getattr(settings, "AWS_REGION", "us-east-1")
 PORT = int(os.getenv("PORT", getattr(settings, "PORT", 3000)))
 DOMAIN = os.getenv("DOMAIN") or getattr(settings, "DOMAIN", "artonbnb.xyz")
+HOST = os.getenv("HOST") or getattr(settings, "HOST", "127.0.0.1")
 
 # Create boto3 client only if credentials or role exist
 s3_client = None
@@ -505,4 +506,4 @@ if __name__ == "__main__":
     import uvicorn
 
     # When running locally, run the app object from this module
-    uvicorn.run("app.main:app", port=PORT, reload=True)
+    uvicorn.run("app.main:app",host=HOST , port=PORT, reload=True)
