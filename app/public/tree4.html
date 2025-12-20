@@ -144,13 +144,12 @@
         let scene, camera, renderer, groupGold, groupRed, groupGift, photoMeshes = [], titleMesh, starMesh, loveMesh;
         
         // CONFIG: Change PHOTO_COUNT to match your number of images
-        const PHOTO_COUNT = 5; // Change this number to load more/fewer photos
         const CONFIG = { goldCount: 2000, redCount: 300, giftCount: 150, explodeRadius: 65, photoOrbitRadius: 25, treeHeight: 70, treeBaseRadius: 35 };
 
         const loader = new THREE.TextureLoader();
         const photoTextures = [];
         for (let i = 1; i <= PHOTO_COUNT; i++) {
-            photoTextures.push(loader.load(`../Mê Ry Chí Mớt/image${i}.jpeg`));
+            photoTextures.push(loader.load(`./image${i}.jpeg`));
         }
 
         // GOLDEN LUXURY THEME: Gold and Bronze
@@ -377,7 +376,7 @@
             ctx3.font = 'bold 120px "Segoe UI"';
             ctx3.fillStyle = '#FFD700'; ctx3.textAlign = 'center';
             ctx3.shadowColor = '#B8860B'; ctx3.shadowBlur = 40;
-            ctx3.fillText('I LOVE YOU', 512, 130);
+            ctx3.fillText(LOVE_TEXT, 512, 130);
             loveMesh = new THREE.Mesh(new THREE.PlaneGeometry(70, 18), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c3), transparent: true, blending: THREE.AdditiveBlending }));
             loveMesh.position.set(0, 0, 20);
             loveMesh.visible = false;
@@ -501,7 +500,7 @@
             document.getElementById('camera-preview').classList.add('visible');
             document.getElementById('debug-btn').style.display = 'block';
             document.querySelector('.mini-guide').style.display = 'block';
-            const music = new Audio('../Mê Ry Chí Mớt/audio.mp3');
+            const music = new Audio('../audio.mp3');
             music.loop = true; music.volume = 0.7; music.play().catch(() => {});
             init3D();
             await initHandDetection();
