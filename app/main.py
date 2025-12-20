@@ -1,7 +1,5 @@
 import os
 import json
-import re
-import datetime
 import time
 import asyncio
 import logging
@@ -92,12 +90,15 @@ app.mount("/static", StaticFiles(directory=str(PUBLIC_DIR)), name="static")
 # --- AWS / S3 client setup (use env fallback) ---
 S3_BUCKET = os.getenv("S3_BUCKET_NAME") or getattr(settings, "S3_BUCKET_NAME", None)
 S3_PUBLIC_URL = os.getenv("S3_PUBLIC_URL") or getattr(settings, "S3_PUBLIC_URL", None)
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID") or getattr(settings, "AWS_ACCESS_KEY_ID", None)
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY") or getattr(settings, "AWS_SECRET_ACCESS_KEY", None)
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID") or getattr(
+    settings, "AWS_ACCESS_KEY_ID", None
+)
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY") or getattr(
+    settings, "AWS_SECRET_ACCESS_KEY", None
+)
 AWS_REGION = os.getenv("AWS_REGION") or getattr(settings, "AWS_REGION", "us-east-1")
 PORT = int(os.getenv("PORT", getattr(settings, "PORT", 3000)))
-DOMAIN = os.getenv("DOMAIN") or getattr(settings, "DOMAIN", "artonbnb.xyz")
-HOST = os.getenv("HOST") or getattr(settings, "HOST", "127.0.0.1")
+DOMAIN = os.getenv("DOMAIN") or getattr(settings, "DOMAIN", "ourxmas.pics")
 
 # Create boto3 client only if credentials or role exist
 s3_client = None
@@ -110,23 +111,6 @@ try:
     )
 except Exception:
     s3_client = None
-
-# Maximum allowed image size (bytes)
-MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
-
-
-def make_project_id(name: str) -> str:
-    """Make a safe slug from the projectName string for use as project id / S3 prefix / subdomain."""
-    s = (name or "").strip().lower()
-    s = re.sub(r"[^a-z0-9]+", "-", s)
-    s = re.sub(r"-{2,}", "-", s).strip("-")
-    if not s:
-        s = "project"
-    if s[0].isdigit():
-        s = "p" + s
-    s = s[:40].rstrip("-")
-    ts = datetime.datetime.utcnow().strftime("%y%m%d%H%M%S")
-    return f"{s}-{ts}"
 
 
 def generate_html(config: dict, image_count: int) -> str:
@@ -141,15 +125,23 @@ def generate_html(config: dict, image_count: int) -> str:
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
 
-    html_content = template.replace("LOVE_TEXT", json.dumps(config.get("loveText", ""))).replace(
-        "IMAGE_LIST", image_list_js
-    )
+    html_content = template.replace(
+        "LOVE_TEXT", json.dumps(config.get("loveText", ""))
+    ).replace("IMAGE_LIST", image_list_js)
     html_content = html_content.replace("PHOTO_COUNT", json.dumps(image_count))
     # Optionally replace foliage count and colors if templates use these tokens
-    html_content = html_content.replace("FOLIAGE_COUNT", json.dumps(config.get("foliageCount", 15000)))
-    html_content = html_content.replace("MAIN_TITLE", json.dumps(config.get("mainTitle", "MERRY CHRISTMAS")))
-    html_content = html_content.replace("TREE_COLOR", json.dumps(config.get("treeColor", "#004225")))
-    html_content = html_content.replace("ACCENT_COLOR", json.dumps(config.get("accentColor", "#FFD700")))
+    html_content = html_content.replace(
+        "FOLIAGE_COUNT", json.dumps(config.get("foliageCount", 15000))
+    )
+    html_content = html_content.replace(
+        "MAIN_TITLE", json.dumps(config.get("mainTitle", "MERRY CHRISTMAS"))
+    )
+    html_content = html_content.replace(
+        "TREE_COLOR", json.dumps(config.get("treeColor", "#004225"))
+    )
+    html_content = html_content.replace(
+        "ACCENT_COLOR", json.dumps(config.get("accentColor", "#FFD700"))
+    )
     return html_content
 
 
@@ -178,10 +170,10 @@ async def upload_to_s3(project_id: str, folder: str, files_dict: dict) -> str:
         ),
     )
 
-    # Body images
+    # Body images (all converted to JPEG)
     for idx, img in enumerate(files_dict["bodyImages"]):
-        fname = Path(img.get("filename", f"image{idx+1}.jpeg"))
-        key = f"{base_key}/{fname.name}"
+        fname = f"image{idx+1}.jpeg"
+        key = f"{base_key}/{fname}"
         data = img["data"]
         content_type = img.get("content_type", "image/jpeg")
         await loop.run_in_executor(
@@ -191,11 +183,11 @@ async def upload_to_s3(project_id: str, folder: str, files_dict: dict) -> str:
             ),
         )
 
-    # Music
+    # Music - use user uploaded or default audio.mp3 from public folder
     music = files_dict.get("music")
     if music:
-        fname = Path(music.get("filename", "audio.mp3"))
-        key = f"{base_key}/{fname.name}"
+        # User uploaded custom music
+        key = f"{base_key}/audio.mp3"
         data = music["data"]
         content_type = music.get("content_type", "audio/mpeg")
         await loop.run_in_executor(
@@ -204,6 +196,19 @@ async def upload_to_s3(project_id: str, folder: str, files_dict: dict) -> str:
                 Bucket=bucket, Key=_key, Body=_data, ContentType=_ct
             ),
         )
+    else:
+        # Use default audio.mp3 from public folder
+        default_audio_path = PUBLIC_DIR / "audio.mp3"
+        if default_audio_path.exists():
+            with open(default_audio_path, "rb") as f:
+                audio_data = f.read()
+            key = f"{base_key}/audio.mp3"
+            await loop.run_in_executor(
+                executor,
+                lambda _key=key, _data=audio_data: s3_client.put_object(
+                    Bucket=bucket, Key=_key, Body=_data, ContentType="audio/mpeg"
+                ),
+            )
 
     # Build public URL
     return f"https://{project_id}.{DOMAIN}"
@@ -247,84 +252,63 @@ async def admin():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "timestamp": time.time(), "service": "Christmas Experience Generator"}
+    return {
+        "status": "ok",
+        "timestamp": time.time(),
+        "service": "Christmas Experience Generator",
+    }
+
+
+@app.post("/api/validate")
+async def validate_request(request: Request):
+    """Validate form data before payment - returns validation result without generating."""
+    from app.validators import validate_generate_request, ValidationError
+
+    form = await request.form()
+
+    try:
+        await validate_generate_request(form)
+        return {"valid": True}
+    except ValidationError as e:
+        return JSONResponse(
+            status_code=400,
+            content={"valid": False, "error": "Validation failed", "errors": e.errors},
+        )
 
 
 @app.post("/api/generate")
 async def generate(request: Request):
     """Generate and deploy Christmas experience (handles arbitrary file fields)"""
+    from app.validators import validate_generate_request, ValidationError
+
     start_time = time.time()
     form = await request.form()
 
-    # Read form fields (strings)
-    projectName = form.get("projectName", "")  # projectName field from form
-    treeType = form.get("treeType", "tree1")
-    mainTitle = form.get("mainTitle", "MERRY CHRISTMAS")
-    loveText = form.get("loveText", "I LOVE YOU ❤️")
-    treeColor = form.get("treeColor", "#004225")
-    accentColor = form.get("accentColor", "#FFD700")
-    foliageCount = form.get("foliageCount", "15000")
-    deployTo = form.get("deployTo", "s3")
-    s3Folder = form.get("s3Folder", "christmas-experience-bucket")
-
-    # Collect files robustly (detect UploadFile by attribute)
-    body_images = []
-    music_file = None
-    seen_filenames = set()
-
-    for key in form.keys():
-        values = form.getlist(key)
-        for val in values:
-            filename = getattr(val, "filename", None)
-            content_type = getattr(val, "content_type", None)
-            if filename:
-                content = await val.read()
-                # Server-side size check for body images
-                if (key.startswith("bodyImage") or key == "bodyImages") and len(content) > MAX_IMAGE_SIZE:
-                    return JSONResponse(
-                        status_code=400,
-                        content={"error": f"File '{filename}' exceeds 5 MB limit"},
-                    )
-                entry = {
-                    "field": key,
-                    "filename": filename,
-                    "content_type": content_type or "application/octet-stream",
-                    "data": content,
-                }
-
-                if filename in seen_filenames:
-                    continue
-                seen_filenames.add(filename)
-
-                if key.startswith("bodyImage") or key == "bodyImages":
-                    body_images.append(entry)
-                elif key == "music":
-                    music_file = entry
-                else:
-                    # treat unknown file fields as body images
-                    body_images.append(entry)
-
-    # Require 5-15 images (align with admin UI)
-    if len(body_images) < 5 or len(body_images) > 15:
-        debug_items = []
-        for key in form.keys():
-            vals = form.getlist(key)
-            for v in vals:
-                t = type(v).__name__
-                fn = getattr(v, "filename", None)
-                ct = getattr(v, "content_type", None)
-                debug_items.append({"field": key, "type": t, "filename": fn, "content_type": ct})
-        import pprint, sys
-
-        print("DEBUG: Received form keys and types:", file=sys.stderr)
-        pprint.pprint(debug_items, stream=sys.stderr)
+    # Validate request using validator
+    try:
+        validated_data = await validate_generate_request(form)
+    except ValidationError as e:
         return JSONResponse(
             status_code=400,
             content={
-                "error": "Please upload between 5 and 15 images (as body images).",
-                "debug": {"received": debug_items},
+                "success": False,
+                "error": "Validation failed",
+                "errors": e.errors,
             },
         )
+
+    # Extract validated data
+    projectName = validated_data["projectName"]
+    treeType = validated_data["treeType"]
+    mainTitle = validated_data["mainTitle"]
+    loveText = validated_data["loveText"]
+    treeColor = validated_data["treeColor"]
+    accentColor = validated_data["accentColor"]
+    foliageCount = validated_data["foliageCount"]
+    deployTo = validated_data["deployTo"]
+    s3Folder = validated_data["s3Folder"]
+    body_images = validated_data["bodyImages"]
+    music_file = validated_data["music"]
 
     # Build config & HTML
     config = {
@@ -334,7 +318,9 @@ async def generate(request: Request):
         "loveText": loveText,
         "treeColor": treeColor,
         "accentColor": accentColor,
-        "foliageCount": int(foliageCount) if foliageCount and foliageCount.isdigit() else 15000,
+        "foliageCount": (
+            int(foliageCount) if foliageCount and str(foliageCount).isdigit() else 15000
+        ),
     }
     html_content = generate_html(config, len(body_images))
 
@@ -345,16 +331,23 @@ async def generate(request: Request):
 
     # Deploy
     try:
-        # Generate safe project id from provided projectName
         project_id = projectName
         if deployTo == "s3":
             if not s3_client or not S3_BUCKET:
                 return JSONResponse(
-                    status_code=400, content={"error": "S3 not configured (AWS credentials / S3_BUCKET_NAME)"}
+                    status_code=400,
+                    content={
+                        "success": False,
+                        "error": "S3 not configured (AWS credentials / S3_BUCKET_NAME)",
+                    },
                 )
-            public_url = await upload_to_s3(project_id=project_id, folder=s3Folder, files_dict=files_dict)
+            public_url = await upload_to_s3(
+                project_id=project_id, folder=s3Folder, files_dict=files_dict
+            )
         else:
-            public_url = await save_locally(project_id=project_id, files_dict=files_dict)
+            public_url = await save_locally(
+                project_id=project_id, files_dict=files_dict
+            )
 
         # Save URL to transaction record
         try:
@@ -364,7 +357,6 @@ async def generate(request: Request):
             if SessionLocal:
                 db = SessionLocal()
                 try:
-                    # Find the transaction with matching content and update URL
                     transaction = (
                         db.query(Transaction)
                         .filter(Transaction.content.ilike(f"%{projectName}%"))
@@ -374,19 +366,28 @@ async def generate(request: Request):
                     if transaction:
                         transaction.url = public_url
                         db.commit()
-                        logger.info(f"Updated transaction {transaction.id} with URL: {public_url}")
+                        logger.info(
+                            f"Updated transaction {transaction.id} with URL: {public_url}"
+                        )
                 finally:
                     db.close()
         except Exception as db_err:
             logger.warning(f"Failed to save URL to transaction: {db_err}")
 
         generation_time = int((time.time() - start_time) * 1000)
-        return {"success": True, "projectId": project_id, "publicUrl": public_url, "generationTime": generation_time}
+        return {
+            "success": True,
+            "projectId": project_id,
+            "publicUrl": public_url,
+            "generationTime": generation_time,
+        }
     except Exception as e:
         import traceback
 
         traceback.print_exc()
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return JSONResponse(
+            status_code=500, content={"success": False, "error": str(e)}
+        )
 
 
 @app.get("/preview/{project_id}/index.html")
@@ -414,12 +415,17 @@ async def verify_payment(project_name: str, min_amount: int = 29000):
 
         if SessionLocal is None:
             logger.error("Database not configured")
-            return JSONResponse(status_code=500, content={"error": "Database not configured", "verified": False})
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Database not configured", "verified": False},
+            )
 
         db = SessionLocal()
         try:
             # Query transactions for content containing project_name and amount >= min_amount
-            logger.info(f"Verifying payment for project: {project_name}, min_amount: {min_amount}")
+            logger.info(
+                f"Verifying payment for project: {project_name}, min_amount: {min_amount}"
+            )
 
             query = (
                 db.query(Transaction)
@@ -431,7 +437,9 @@ async def verify_payment(project_name: str, min_amount: int = 29000):
             )
 
             # Log the query for debugging
-            logger.info(f"Query: content ILIKE '%{project_name}%' AND amount >= {min_amount}")
+            logger.info(
+                f"Query: content ILIKE '%{project_name}%' AND amount >= {min_amount}"
+            )
 
             transaction = query.first()
 
@@ -458,7 +466,9 @@ async def verify_payment(project_name: str, min_amount: int = 29000):
             db.close()
     except Exception as e:
         logger.exception(f"Error verifying payment: {e}")
-        return JSONResponse(status_code=500, content={"error": str(e), "verified": False})
+        return JSONResponse(
+            status_code=500, content={"error": str(e), "verified": False}
+        )
 
 
 @app.get("/api/project/check/{project_name}")
@@ -470,7 +480,9 @@ async def check_project_exists(project_name: str):
 
         if SessionLocal is None:
             logger.error("Database not configured")
-            return JSONResponse(status_code=500, content={"error": "Database not configured"})
+            return JSONResponse(
+                status_code=500, content={"error": "Database not configured"}
+            )
 
         db = SessionLocal()
         try:

@@ -1,670 +1,1583 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎄 Christmas Experience Generator</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-            color: #fff;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #FFD700, #FF69B4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .subtitle {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .form-section {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
-            backdrop-filter: blur(10px);
-        }
-
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #FFD700;
-            font-size: 14px;
-        }
-
-        input[type="text"],
-        input[type="email"],
-        textarea,
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
-            font-family: inherit;
-            font-size: 14px;
-        }
-
-        input[type="text"]:focus,
-        textarea:focus,
-        select:focus {
-            outline: none;
-            border-color: #FFD700;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .file-upload-label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 30px;
-            border: 2px dashed rgba(255, 215, 0, 0.4);
-            border-radius: 8px;
-            background: rgba(255, 215, 0, 0.05);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-        }
-
-        .file-upload-label:hover {
-            border-color: #FFD700;
-            background: rgba(255, 215, 0, 0.1);
-        }
-
-        .file-list {
-            margin-top: 15px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
-        }
-
-        .file-preview {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-        }
-
-        .button-group {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 30px;
-        }
-
-        button {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-generate {
-            background: linear-gradient(135deg, #FFD700, #FFA500);
-            color: #000;
-            flex: 1;
-            max-width: 300px;
-        }
-
-        .btn-generate:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
-        }
-
-        .btn-generate:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .progress-section {
-            display: none;
-            margin-top: 20px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #FFD700, #FF69B4);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        .status-message {
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-
-        .status-success {
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid rgba(0, 255, 0, 0.3);
-            color: #0F0;
-        }
-
-        .status-error {
-            background: rgba(255, 0, 0, 0.1);
-            border: 1px solid rgba(255, 0, 0, 0.3);
-            color: #FF6B6B;
-        }
-
-        .status-info {
-            background: rgba(255, 215, 0, 0.1);
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            color: #FFD700;
-        }
-
-        .result-section {
-            display: none;
-            background: rgba(0, 255, 0, 0.05);
-            border: 1px solid rgba(0, 255, 0, 0.3);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .result-url {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 8px;
-            word-break: break-all;
-            font-family: monospace;
-            margin-bottom: 10px;
-            font-size: 12px;
-        }
-
-        .copy-btn {
-            background: #00AA00;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 12px;
-        }
-    </style>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1>🎄 Magic Christmas Generator</h1>
-      <p class="subtitle">Create personalized interactive 3D Christmas experiences</p>
-    </header>
-
-    <form id="generatorForm">
-      <div class="form-section">
-        <h3 style="margin-bottom: 20px; color: #FFD700;">Basic Information</h3>
-
-        <div class="form-group">
-            <label for="projectName">Project Name</label>
-            <input type="text" id="projectName" name="projectName" placeholder="e.g., my-project-name (letters, digits, hyphens only)" required>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <h3 style="margin-bottom: 20px; color: #FFD700;">Upload Images & Media</h3>
-
-        <div class="form-group">
-          <label>Body Images (Ornaments) * - 5 to 15 (required)</label>
-          <div>
-            <label for="bodyImages" class="file-upload-label">🖼️ Click or drag images here (5-15 images)</label>
-            <input type="file" id="bodyImages" name="bodyImages" accept="image/*" multiple required style="display:none;">
-          </div>
-          <div id="bodyPreview" class="file-list"></div>
-        </div>
-
-        <div class="form-group">
-          <label>Background Music (Optional)</label>
-          <div>
-            <label for="music" class="file-upload-label">🎵 Click or drag audio file here</label>
-            <input type="file" id="music" name="music" accept="audio/*" style="display:none;">
-          </div>
-          <div id="musicPreview"></div>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <h3 style="margin-bottom: 20px; color: #FFD700;">Customization</h3>
-
-        <div class="form-group">
-          <label for="mainTitle">Main Title</label>
-          <input type="text" id="mainTitle" name="mainTitle" placeholder="MERRY CHRISTMAS" value="MERRY CHRISTMAS">
-        </div>
-
-        <div class="form-group">
-          <label for="loveText">Love Text</label>
-          <input type="text" id="loveText" name="loveText" placeholder="I LOVE YOU ❤️" value="I LOVE YOU ❤️">
-        </div>
-
-        <div class="form-group">
-          <label for="treeType">Tree Type</label>
-          <select id="treeType" name="treeType">
-            <option value="tree1">Tree 1 (Classic)</option>
-            <option value="tree2">Tree 2 (Neon)</option>
-            <option value="tree3">Tree 3 (Snow Crystal)</option>
-            <option value="tree4">Tree 4 (Golden Luxury)</option>
-            <option value="tree5">Tree 5 (Rainbow Magic)</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Payment Section -->
-      <div class="form-section" id="paymentSection" style="display: none;">
-        <h3 style="margin-bottom: 20px; color: #FFD700;">💳 Payment</h3>
-        
-        <div style="text-align: center; padding: 20px;">
-          <p style="margin-bottom: 15px; color: rgba(255,255,255,0.8);">
-            Scan QR code to pay <strong style="color: #FFD700;">29,000 VND</strong>
-          </p>
-          <p style="margin-bottom: 5px; font-size: 12px; color: rgba(255,255,255,0.6);">
-            Transfer content (Nội dung chuyển khoản):
-          </p>
-          <p style="margin-bottom: 15px;">
-            <strong id="paymentContent" style="color: #FF69B4; font-size: 16px;"></strong>
-            <button type="button" onclick="copyPaymentContent()" style="background: transparent; border: 1px solid #FF69B4; color: #FF69B4; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-left: 8px;">📋 Copy</button>
-          </p>
-          <div id="qrCodeContainer" style="background: white; padding: 20px; border-radius: 12px; display: inline-block;">
-            <img id="qrCodeImage" src="" alt="Payment QR Code" style="max-width: 280px; height: auto;">
-          </div>
-          <div id="paymentStatus" class="status-message status-info" style="margin-top: 15px;">
-            ⏳ Waiting for payment...
-          </div>
-          <button type="button" id="cancelPaymentBtn" onclick="cancelPayment()" style="margin-top: 15px; background: rgba(255,100,100,0.2); border: 1px solid rgba(255,100,100,0.5); color: #FF6B6B; padding: 8px 20px; border-radius: 6px; cursor: pointer;">
-            ❌ Cancel
-          </button>
-        </div>
-      </div>
-
-      <div class="form-section" id="deploySection">
-        <h3 style="margin-bottom: 20px; color: #FFD700;">Deploy Settings</h3>
-
-        <div class="form-group">
-          <label>Deploy To</label>
-          <div style="padding:12px; border:1px solid rgba(255,215,0,0.1); border-radius:8px; background: rgba(255,255,255,0.02); color:#fff; font-weight:600;">
-            AWS S3 (Public)
-          </div>
-          <input type="hidden" id="deployTo" name="deployTo" value="s3">
-        </div>
-
-        <div class="button-group">
-          <button type="reset" class="btn-generate" style="background: rgba(255,255,255,0.1); color: #fff;">Reset</button>
-          <button type="submit" class="btn-generate" id="submitBtn">💳 Proceed to Payment</button>
-        </div>
-
-        <div class="progress-section" id="progressSection">
-          <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
-          </div>
-          <div id="statusMessage" class="status-message status-info"></div>
-        </div>
-
-        <div class="result-section" id="resultSection">
-          <h3 style="color: #0F0; margin-bottom: 15px;">✅ Success!</h3>
-          <p style="margin-bottom: 10px;">Your Christmas experience is existed. Please check the link first:</p>
-          <div class="result-url" id="resultUrl"></div>
-          <button type="button" class="copy-btn" onclick="copyUrl()">📋 Copy URL</button>
-        </div>
-      </div>
-    </form>
-  </div>
-
-<script>
-const form = document.getElementById('generatorForm');
-const bodyImagesInput = document.getElementById('bodyImages');
-const musicInput = document.getElementById('music');
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-const MIN_IMAGES = 5;
-const MAX_IMAGES = 15;
-const MAX_NAME_LEN = 63;
-const NAME_ALLOWED_RE = /^[a-z0-9-]+$/i;
-
-// Payment settings
-const PAYMENT_AMOUNT = 29000;
-const POLL_INTERVAL = 3000; // 3 seconds
-const POLL_TIMEOUT = 10 * 60 * 1000; // 10 minutes timeout
-const SEPAY_ACCOUNT = '96247QTKN';
-const SEPAY_BANK = 'BIDV';
-const SEPAY_TEMPLATE = 'compact';
-const SEPAY_BRID = '19mN62fT_sS4GCXWrxpohg';
-
-let pollTimer = null;
-let pollTimeoutTimer = null;
-let pollStartTime = null;
-let currentProjectName = '';
-
-// sanitize a raw project name into a safe slug for S3/subdomain
-function sanitizeProjectName(raw) {
-  if (!raw) return '';
-  let s = raw.trim().toLowerCase();
-  // replace invalid chars (including spaces) with hyphen
-  s = s.replace(/[^a-z0-9-]+/g, '-');
-  // collapse multiple hyphens
-  s = s.replace(/-+/g, '-');
-  // trim leading/trailing hyphens
-  s = s.replace(/(^-+|-+$)/g, '');
-  // enforce max length
-  if (s.length > MAX_NAME_LEN) s = s.slice(0, MAX_NAME_LEN);
-  return s;
-}
-
-function showMessage(msg, type) {
-  const statusEl = document.getElementById('statusMessage');
-  statusEl.textContent = msg;
-  statusEl.className = `status-message status-${type}`;
-}
-
-function updateProgress(percent) {
-  document.getElementById('progressFill').style.width = percent + '%';
-}
-
-// Generate Sepay QR URL
-function generateQRUrl(projectName) {
-  const encodedDes = encodeURIComponent(projectName);
-  return `https://qr.sepay.vn/img?acc=${SEPAY_ACCOUNT}&bank=${SEPAY_BANK}&amount=${PAYMENT_AMOUNT}&des=${encodedDes}&template=${SEPAY_TEMPLATE}&brid=${SEPAY_BRID}`;
-}
-
-// Show payment section
-function showPaymentSection(projectName) {
-  currentProjectName = projectName;
-  
-  const paymentSection = document.getElementById('paymentSection');
-  const deploySection = document.getElementById('deploySection');
-  const qrImage = document.getElementById('qrCodeImage');
-  const paymentContent = document.getElementById('paymentContent');
-  const paymentStatus = document.getElementById('paymentStatus');
-  
-  // Update UI
-  paymentContent.textContent = projectName;
-  qrImage.src = generateQRUrl(projectName);
-  paymentStatus.innerHTML = '⏳ Waiting for payment...';
-  paymentStatus.className = 'status-message status-info';
-  
-  // Show payment, hide deploy button section content
-  paymentSection.style.display = 'block';
-  document.getElementById('submitBtn').disabled = true;
-  document.getElementById('submitBtn').textContent = '⏳ Awaiting Payment...';
-  
-  // Start polling
-  startPaymentPolling(projectName);
-}
-
-// Copy payment content
-function copyPaymentContent() {
-  const content = document.getElementById('paymentContent').textContent;
-  navigator.clipboard.writeText(content).then(() => {
-    alert('Payment content copied!');
-  });
-}
-
-// Cancel payment
-function cancelPayment() {
-  stopPaymentPolling();
-  document.getElementById('paymentSection').style.display = 'none';
-  document.getElementById('submitBtn').disabled = false;
-  document.getElementById('submitBtn').textContent = '💳 Proceed to Payment';
-  currentProjectName = '';
-}
-
-// Start polling for payment verification
-function startPaymentPolling(projectName) {
-  if (pollTimer) clearInterval(pollTimer);
-  if (pollTimeoutTimer) clearTimeout(pollTimeoutTimer);
-  
-  pollStartTime = Date.now();
-  
-  // Set timeout to auto-cancel after POLL_TIMEOUT
-  pollTimeoutTimer = setTimeout(() => {
-    stopPaymentPolling();
-    document.getElementById('paymentStatus').innerHTML = '⏰ Payment timeout. Please try again.';
-    document.getElementById('paymentStatus').className = 'status-message status-error';
-    document.getElementById('submitBtn').disabled = false;
-    document.getElementById('submitBtn').textContent = '💳 Proceed to Payment';
-  }, POLL_TIMEOUT);
-  
-  pollTimer = setInterval(async () => {
-    try {
-      // Update remaining time in status
-      const elapsed = Date.now() - pollStartTime;
-      const remaining = Math.max(0, POLL_TIMEOUT - elapsed);
-      const minutes = Math.floor(remaining / 60000);
-      const seconds = Math.floor((remaining % 60000) / 1000);
-      document.getElementById('paymentStatus').innerHTML = 
-        `⏳ Waiting for payment... (${minutes}:${seconds.toString().padStart(2, '0')} remaining)`;
-      
-      const response = await fetch(`/api/payment/verify/${encodeURIComponent(projectName)}?min_amount=${PAYMENT_AMOUNT}`);
-      const data = await response.json();
-      
-      if (data.verified) {
-        stopPaymentPolling();
-        document.getElementById('paymentStatus').innerHTML = '✅ Payment confirmed! Generating...';
-        document.getElementById('paymentStatus').className = 'status-message status-success';
-        
-        // Proceed with generation after short delay
-        setTimeout(() => proceedWithGeneration(), 1000);
-      }
-    } catch (err) {
-      console.error('Payment verification error:', err);
-    }
-  }, POLL_INTERVAL);
-}
-
-function stopPaymentPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
-  if (pollTimeoutTimer) {
-    clearTimeout(pollTimeoutTimer);
-    pollTimeoutTimer = null;
-  }
-  pollStartTime = null;
-}
-
-// File previews with size check
-bodyImagesInput.addEventListener('change', (e) => {
-  const files = Array.from(e.target.files);
-  const preview = document.getElementById('bodyPreview');
-  preview.innerHTML = '';
-
-  const oversized = files.find(f => f.size > MAX_FILE_SIZE);
-  if (oversized) {
-    showMessage(`File "${oversized.name}" exceeds 5 MB limit`, 'error');
-    bodyImagesInput.value = '';
-    preview.innerHTML = '';
-    return;
-  }
-
-  files.forEach((file) => {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = document.createElement('img');
-      img.src = ev.target.result;
-      img.className = 'file-preview';
-      preview.appendChild(img);
-    };
-    reader.readAsDataURL(file);
-  });
-});
-
-// Music preview (unchanged behavior)
-musicInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  const musicPreview = document.getElementById('musicPreview');
-  if (file) {
-    musicPreview.innerHTML = `
-      <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
-        🎵 ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)
-      </div>
-    `;
-  } else {
-    musicPreview.innerHTML = '';
-  }
-});
-
-// Form submission - check project exists first, then show payment
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  // Project name validation & sanitization
-  const projectInput = document.getElementById('projectName');
-  const rawName = (projectInput.value || '').trim();
-  if (!rawName) {
-    showMessage('Project name is required', 'error');
-    return;
-  }
-
-  // If raw name already valid and within length, accept it
-  let projectName = rawName;
-  if (!NAME_ALLOWED_RE.test(rawName) || rawName.length > MAX_NAME_LEN || rawName.startsWith('-') || rawName.endsWith('-')) {
-    // try to sanitize
-    const sanitized = sanitizeProjectName(rawName);
-    if (!sanitized) {
-      showMessage('Project name contains invalid characters and cannot be sanitized. Use letters, digits or hyphens only.', 'error');
-      return;
-    }
-    projectInput.value = sanitized;
-    projectName = sanitized;
-    showMessage(`Project name sanitized to "${sanitized}"`, 'info');
-  }
-
-  // Validate body images count
-  const files = Array.from(bodyImagesInput.files || []);
-  if (files.length < MIN_IMAGES || files.length > MAX_IMAGES) {
-    showMessage(`Please upload between ${MIN_IMAGES} and ${MAX_IMAGES} body images`, 'error');
-    return;
-  }
-
-  // Final size check
-  const oversized = files.find(f => f.size > MAX_FILE_SIZE);
-  if (oversized) {
-    showMessage(`File "${oversized.name}" exceeds 5 MB limit`, 'error');
-    return;
-  }
-
-  // Check if project already exists (already generated)
-  try {
-    document.getElementById('submitBtn').disabled = true;
-    document.getElementById('submitBtn').textContent = '⏳ Checking...';
-    
-    const checkResponse = await fetch(`/api/project/check/${encodeURIComponent(projectName)}`);
-    const checkData = await checkResponse.json();
-    
-    if (checkData.exists) {
-      showMessage(`This project has already been generated. URL: ${checkData.url}`, 'error');
-      document.getElementById('resultUrl').textContent = checkData.url;
-      document.getElementById('resultSection').style.display = 'block';
-      document.getElementById('submitBtn').disabled = false;
-      document.getElementById('submitBtn').textContent = '💳 Proceed to Payment';
-      return;
-    }
-  } catch (err) {
-    console.error('Error checking project:', err);
-    // Continue anyway if check fails
-  }
-  
-  document.getElementById('submitBtn').disabled = false;
-  document.getElementById('submitBtn').textContent = '💳 Proceed to Payment';
-
-  // Show payment section
-  showPaymentSection(projectName);
-});
-
-// Proceed with generation after payment verified
-async function proceedWithGeneration() {
-  const files = Array.from(bodyImagesInput.files || []);
-  
-  // Build FormData from the form
-  const formData = new FormData(form);
-  formData.set('deployTo', 's3');
-  formData.delete('bodyImages');
-
-  for (let i = 0; i < files.length; i++) {
-    formData.append(`bodyImage${i}`, files[i]);
-  }
-
-  showMessage('Uploading files...', 'info');
-  document.getElementById('progressSection').style.display = 'block';
-  document.getElementById('resultSection').style.display = 'none';
-  updateProgress(10);
-
-  try {
-    const response = await fetch('/api/generate', {
-      method: 'POST',
-      body: formData
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      updateProgress(100);
-      showMessage(`✅ Success! Generated in ${data.generationTime}ms`, 'success');
-      document.getElementById('resultUrl').textContent = data.publicUrl;
-      document.getElementById('resultSection').style.display = 'block';
-      
-      // Hide payment section and reset button
-      document.getElementById('paymentSection').style.display = 'none';
-      document.getElementById('submitBtn').disabled = false;
-      document.getElementById('submitBtn').textContent = '💳 Proceed to Payment';
-    } else {
-      updateProgress(0);
-      showMessage(`❌ ${data.error || 'Generation failed'}`, 'error');
-    }
-  } catch (err) {
-    updateProgress(0);
-    showMessage(`❌ Upload failed: ${err.message}`, 'error');
-  }
-}
-
-function copyUrl() {
-  const url = document.getElementById('resultUrl').textContent;
-  navigator.clipboard.writeText(url).then(() => {
-    alert('URL copied to clipboard!');
-  });
-}
-</script>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>🎄 Christmas Experience Generator</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+			rel="stylesheet" />
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			body {
+				font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+					sans-serif;
+				background: linear-gradient(
+					135deg,
+					#0f0c29 0%,
+					#302b63 50%,
+					#24243e 100%
+				);
+				color: #fff;
+				min-height: 100vh;
+				padding: 40px 20px;
+			}
+			.container {
+				max-width: 720px;
+				margin: 0 auto;
+			}
+			header {
+				text-align: center;
+				margin-bottom: 48px;
+			}
+			.logo {
+				font-size: 4rem;
+				margin-bottom: 16px;
+				filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.5));
+			}
+			h1 {
+				font-size: 2.2rem;
+				font-weight: 700;
+				margin-bottom: 12px;
+				background: linear-gradient(
+					135deg,
+					#ffd700 0%,
+					#ff6b6b 50%,
+					#ff69b4 100%
+				);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				background-clip: text;
+			}
+			.subtitle {
+				color: rgba(255, 255, 255, 0.6);
+				font-size: 1rem;
+			}
+			.card {
+				background: rgba(255, 255, 255, 0.03);
+				border: 1px solid rgba(255, 255, 255, 0.08);
+				border-radius: 16px;
+				padding: 28px;
+				margin-bottom: 24px;
+				backdrop-filter: blur(20px);
+				box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+			}
+			.card-title {
+				font-size: 0.85rem;
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: 1.5px;
+				color: rgba(255, 215, 0, 0.9);
+				margin-bottom: 24px;
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+			.card-title::after {
+				content: "";
+				flex: 1;
+				height: 1px;
+				background: linear-gradient(90deg, rgba(255, 215, 0, 0.3), transparent);
+			}
+			.form-group {
+				margin-bottom: 20px;
+			}
+			.form-group:last-child {
+				margin-bottom: 0;
+			}
+			label {
+				display: block;
+				margin-bottom: 8px;
+				font-weight: 500;
+				color: rgba(255, 255, 255, 0.8);
+				font-size: 0.9rem;
+			}
+			.label-hint {
+				font-weight: 400;
+				color: rgba(255, 255, 255, 0.4);
+				font-size: 0.8rem;
+				margin-left: 4px;
+			}
+			.input {
+				width: 100%;
+				padding: 14px 16px;
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				border-radius: 10px;
+				background: rgba(0, 0, 0, 0.2);
+				color: #fff;
+				font-family: inherit;
+				font-size: 0.95rem;
+				transition: all 0.2s;
+			}
+			.input:focus {
+				outline: none;
+				border-color: rgba(255, 215, 0, 0.5);
+				box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+			}
+			.input::placeholder {
+				color: rgba(255, 255, 255, 0.3);
+			}
+			.field-error {
+				color: #ff6b6b;
+				font-size: 0.8rem;
+				margin-top: 6px;
+				min-height: 18px;
+			}
+			.form-row {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 16px;
+			}
+			@media (max-width: 600px) {
+				.form-row {
+					grid-template-columns: 1fr;
+				}
+			}
+			.drop-zone {
+				border: 2px dashed rgba(255, 255, 255, 0.15);
+				border-radius: 12px;
+				padding: 40px 20px;
+				text-align: center;
+				cursor: pointer;
+				transition: all 0.3s;
+				background: rgba(0, 0, 0, 0.1);
+			}
+			.drop-zone:hover,
+			.drop-zone.drag-over {
+				border-color: rgba(255, 215, 0, 0.5);
+				background: rgba(255, 215, 0, 0.05);
+			}
+			.drop-zone-small {
+				padding: 20px;
+			}
+			.drop-zone-icon {
+				font-size: 2.5rem;
+				margin-bottom: 12px;
+				opacity: 0.7;
+			}
+			.drop-zone-text {
+				font-size: 0.95rem;
+				color: rgba(255, 255, 255, 0.7);
+				margin-bottom: 4px;
+			}
+			.drop-zone-hint {
+				font-size: 0.8rem;
+				color: rgba(255, 255, 255, 0.4);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<div class="logo">🎄</div>
+				<h1>Magic Christmas Generator</h1>
+				<p class="subtitle">
+					Create personalized interactive 3D Christmas experiences
+				</p>
+			</header>
+
+			<form id="generatorForm">
+				<div class="card">
+					<div class="card-title">� Your Custom Link</div>
+					<div class="form-group">
+						<label for="projectName"
+							>Subdomain Name
+							<span class="label-hint">(letters & numbers only)</span></label
+						>
+						<div class="input-with-button">
+							<input
+								type="text"
+								id="projectName"
+								name="projectName"
+								class="input"
+								placeholder="e.g., mychristmas2024"
+								required
+								pattern="[A-Za-z0-9]+" />
+							<button
+								type="button"
+								class="btn-check"
+								id="checkNameBtn"
+								onclick="checkSubdomain()">
+								Check
+							</button>
+						</div>
+						<div class="field-error" id="projectNameError"></div>
+						<div
+							class="domain-preview"
+							id="domainPreview"
+							style="display: none">
+							<span class="domain-available">✅ Available:</span>
+							<span class="domain-url" id="previewUrl"></span>
+						</div>
+					</div>
+				</div>
+
+				<div id="remainingForm" style="display: none">
+					<div class="card">
+						<div class="card-title">🖼️ Upload Images</div>
+						<div class="form-group">
+							<label
+								>Ornament Images
+								<span class="label-hint"
+									>(5-15 required • PNG, JPG)</span
+								></label
+							>
+							<div id="bodyImagesDropZone" class="drop-zone">
+								<div class="drop-zone-icon">📁</div>
+								<div class="drop-zone-text">
+									Drop images here or click to browse
+								</div>
+								<div class="drop-zone-hint">Maximum 5MB per file</div>
+							</div>
+							<input
+								type="file"
+								id="bodyImages"
+								name="bodyImages"
+								accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+								multiple
+								style="display: none" />
+							<div id="bodyPreview" class="preview-grid"></div>
+							<div class="image-counter" id="imageCounter">0 / 15 images</div>
+							<div class="field-error" id="bodyImagesError"></div>
+						</div>
+						<div class="form-group">
+							<label
+								>Background Music
+								<span class="label-hint">(optional • MP3 only)</span></label
+							>
+							<div id="musicDropZone" class="drop-zone drop-zone-small">
+								<div class="drop-zone-text">
+									🎵 Drop MP3 file or click to browse
+								</div>
+							</div>
+							<input
+								type="file"
+								id="music"
+								name="music"
+								accept=".mp3,audio/mpeg"
+								style="display: none" />
+							<div id="musicPreview"></div>
+							<div class="field-error" id="musicError"></div>
+						</div>
+					</div>
+
+					<div class="card">
+						<div class="card-title">✨ Customization</div>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="mainTitle">Main Title</label>
+								<input
+									type="text"
+									id="mainTitle"
+									name="mainTitle"
+									class="input"
+									value="MERRY CHRISTMAS" />
+							</div>
+							<div class="form-group">
+								<label for="loveText">Message Text</label>
+								<input
+									type="text"
+									id="loveText"
+									name="loveText"
+									class="input"
+									value="I LOVE YOU ❤️" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label>Tree Style</label>
+							<div class="tree-selector">
+								<label class="tree-option selected"
+									><input
+										type="radio"
+										name="treeType"
+										value="tree1"
+										checked /><span class="tree-preview">🎄</span
+									><span class="tree-name">Classic</span></label
+								>
+								<label class="tree-option"
+									><input type="radio" name="treeType" value="tree2" /><span
+										class="tree-preview"
+										>💜</span
+									><span class="tree-name">Neon</span></label
+								>
+								<label class="tree-option"
+									><input type="radio" name="treeType" value="tree3" /><span
+										class="tree-preview"
+										>❄️</span
+									><span class="tree-name">Snow</span></label
+								>
+								<label class="tree-option"
+									><input type="radio" name="treeType" value="tree4" /><span
+										class="tree-preview"
+										>✨</span
+									><span class="tree-name">Golden</span></label
+								>
+								<label class="tree-option"
+									><input type="radio" name="treeType" value="tree5" /><span
+										class="tree-preview"
+										>🌈</span
+									><span class="tree-name">Rainbow</span></label
+								>
+							</div>
+						</div>
+					</div>
+
+					<div class="card" id="paymentSection" style="display: none">
+						<div class="card-title">💳 Payment</div>
+						<div class="payment-content">
+							<p class="payment-amount">29,000 VND</p>
+							<p class="payment-instruction">
+								Scan QR code to complete payment
+							</p>
+							<div class="qr-container">
+								<img id="qrCodeImage" src="" alt="Payment QR" />
+							</div>
+							<div id="paymentStatus" class="payment-status status-waiting">
+								⏳ Waiting for payment...
+							</div>
+							<button
+								type="button"
+								class="btn-cancel"
+								onclick="cancelPayment()">
+								Cancel Payment
+							</button>
+						</div>
+					</div>
+
+					<input type="hidden" id="deployTo" name="deployTo" value="s3" />
+
+					<div class="action-section">
+						<button type="button" class="btn-reset" onclick="resetForm()">
+							Reset
+						</button>
+						<button type="submit" class="btn-primary" id="submitBtn">
+							<span class="btn-icon">💳</span> Proceed to Payment
+						</button>
+					</div>
+				</div>
+				<!-- End remainingForm -->
+
+				<div
+					id="progressSection"
+					class="progress-section"
+					style="display: none">
+					<div class="progress-bar">
+						<div class="progress-fill" id="progressFill"></div>
+					</div>
+					<div id="statusMessage" class="status-message"></div>
+				</div>
+
+				<div id="resultSection" class="result-section" style="display: none">
+					<div class="result-icon">🎉</div>
+					<h3>Your Christmas Experience is Ready!</h3>
+					<div class="result-url" id="resultUrl"></div>
+					<button type="button" class="btn-copy" onclick="copyUrl()">
+						📋 Copy URL
+					</button>
+				</div>
+			</form>
+		</div>
+
+		<!-- Success Modal Popup -->
+		<div id="successModal" class="modal-overlay" style="display: none">
+			<div class="modal-content">
+				<button type="button" class="modal-close" onclick="closeSuccessModal()">
+					×
+				</button>
+				<div class="modal-icon">🎉</div>
+				<h2 class="modal-title">Your Christmas Experience is Ready!</h2>
+				<p class="modal-subtitle">
+					Share this magical link with your loved ones
+				</p>
+				<div class="modal-url" id="modalResultUrl"></div>
+				<div class="modal-actions">
+					<button type="button" class="btn-copy-modal" onclick="copyModalUrl()">
+						📋 Copy URL
+					</button>
+					<button type="button" class="btn-visit" onclick="visitUrl()">
+						🌐 Visit Site
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Existing Domain Modal -->
+		<div id="existingDomainModal" class="modal-overlay" style="display: none">
+			<div class="modal-content modal-warning">
+				<button
+					type="button"
+					class="modal-close"
+					onclick="closeExistingDomainModal()">
+					×
+				</button>
+				<div class="modal-icon">⚠️</div>
+				<h2 class="modal-title modal-title-warning">
+					This subdomain already exists!
+				</h2>
+				<p class="modal-subtitle">
+					Someone has already created a Christmas experience with this name
+				</p>
+				<div class="modal-url" id="existingDomainUrl"></div>
+				<div class="modal-actions">
+					<button
+						type="button"
+						class="btn-visit-existing"
+						onclick="visitExistingDomain()">
+						🌐 Visit Existing Site
+					</button>
+					<button
+						type="button"
+						class="btn-try-another"
+						onclick="closeExistingDomainModal()">
+						Try Another Name
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<style>
+			.preview-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+				gap: 10px;
+				margin-top: 16px;
+			}
+			.preview-item {
+				position: relative;
+				aspect-ratio: 1;
+				border-radius: 8px;
+				overflow: hidden;
+				border: 1px solid rgba(255, 255, 255, 0.1);
+			}
+			.preview-item img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+			.preview-remove {
+				position: absolute;
+				top: 4px;
+				right: 4px;
+				width: 22px;
+				height: 22px;
+				background: rgba(255, 0, 0, 0.85);
+				border: none;
+				border-radius: 50%;
+				color: #fff;
+				font-size: 14px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				opacity: 0;
+				transition: opacity 0.2s;
+			}
+			.preview-item:hover .preview-remove {
+				opacity: 1;
+			}
+			.image-counter {
+				font-size: 0.8rem;
+				color: rgba(255, 255, 255, 0.5);
+				margin-top: 8px;
+				text-align: right;
+			}
+			.music-item {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				background: rgba(255, 255, 255, 0.05);
+				padding: 12px 16px;
+				border-radius: 8px;
+				margin-top: 12px;
+			}
+			.music-item span {
+				color: rgba(255, 255, 255, 0.8);
+				font-size: 0.9rem;
+			}
+			.tree-selector {
+				display: flex;
+				gap: 10px;
+				flex-wrap: wrap;
+			}
+			.tree-option {
+				flex: 1;
+				min-width: 80px;
+				padding: 16px 12px;
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				border-radius: 10px;
+				text-align: center;
+				cursor: pointer;
+				transition: all 0.2s;
+				background: rgba(0, 0, 0, 0.2);
+			}
+			.tree-option:hover {
+				border-color: rgba(255, 215, 0, 0.3);
+			}
+			.tree-option.selected {
+				border-color: #ffd700;
+				background: rgba(255, 215, 0, 0.1);
+			}
+			.tree-option input {
+				display: none;
+			}
+			.tree-preview {
+				font-size: 1.8rem;
+				display: block;
+				margin-bottom: 6px;
+			}
+			.tree-name {
+				font-size: 0.75rem;
+				color: rgba(255, 255, 255, 0.6);
+			}
+			.action-section {
+				display: flex;
+				gap: 12px;
+				justify-content: center;
+				margin-top: 32px;
+			}
+			.btn-primary {
+				flex: 1;
+				max-width: 280px;
+				padding: 16px 32px;
+				border: none;
+				border-radius: 12px;
+				background: linear-gradient(135deg, #ffd700, #ffa500);
+				color: #000;
+				font-size: 1rem;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.3s;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 8px;
+			}
+			.btn-primary:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
+			}
+			.btn-primary:disabled {
+				opacity: 0.5;
+				cursor: not-allowed;
+				transform: none;
+			}
+			.btn-reset {
+				padding: 16px 24px;
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				border-radius: 12px;
+				background: transparent;
+				color: rgba(255, 255, 255, 0.7);
+				font-size: 0.95rem;
+				font-weight: 500;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			.btn-reset:hover {
+				border-color: rgba(255, 255, 255, 0.4);
+				color: #fff;
+			}
+
+			/* Input with button styles */
+			.input-with-button {
+				display: flex;
+				gap: 12px;
+			}
+			.input-with-button .input {
+				flex: 1;
+			}
+			.btn-check {
+				padding: 14px 24px;
+				border: none;
+				border-radius: 10px;
+				background: linear-gradient(135deg, #667eea, #764ba2);
+				color: #fff;
+				font-size: 0.95rem;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.2s;
+				white-space: nowrap;
+			}
+			.btn-check:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+			}
+			.btn-check:disabled {
+				opacity: 0.5;
+				cursor: not-allowed;
+				transform: none;
+			}
+			.domain-preview {
+				margin-top: 12px;
+				padding: 12px 16px;
+				background: rgba(74, 222, 128, 0.1);
+				border: 1px solid rgba(74, 222, 128, 0.3);
+				border-radius: 8px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+			.domain-available {
+				color: #4ade80;
+				font-weight: 500;
+				font-size: 0.9rem;
+			}
+			.domain-url {
+				color: #4ade80;
+				font-family: "SF Mono", Monaco, monospace;
+				font-size: 0.9rem;
+			}
+		</style>
+
+		<style>
+			.payment-content {
+				text-align: center;
+				padding: 20px 0;
+			}
+			.payment-amount {
+				font-size: 2rem;
+				font-weight: 700;
+				color: #ffd700;
+				margin-bottom: 8px;
+			}
+			.payment-instruction {
+				color: rgba(255, 255, 255, 0.6);
+				margin-bottom: 20px;
+			}
+			.payment-transfer {
+				display: inline-flex;
+				align-items: center;
+				gap: 10px;
+				background: rgba(0, 0, 0, 0.3);
+				padding: 10px 16px;
+				border-radius: 8px;
+				margin-bottom: 20px;
+			}
+			.payment-transfer span {
+				color: rgba(255, 255, 255, 0.5);
+				font-size: 0.85rem;
+			}
+			.payment-transfer code {
+				color: #ff69b4;
+				font-size: 1rem;
+				font-weight: 600;
+			}
+			.btn-copy-small {
+				padding: 4px 10px;
+				border: 1px solid rgba(255, 105, 180, 0.5);
+				border-radius: 4px;
+				background: transparent;
+				color: #ff69b4;
+				font-size: 0.75rem;
+				cursor: pointer;
+			}
+			.qr-container {
+				background: #fff;
+				padding: 16px;
+				border-radius: 12px;
+				display: inline-block;
+				margin-bottom: 20px;
+			}
+			.qr-container img {
+				max-width: 220px;
+				height: auto;
+				display: block;
+			}
+			.payment-status {
+				padding: 12px 20px;
+				border-radius: 8px;
+				font-size: 0.9rem;
+			}
+			.status-waiting {
+				background: rgba(255, 215, 0, 0.1);
+				color: #ffd700;
+			}
+			.status-success {
+				background: rgba(0, 255, 0, 0.1);
+				color: #4ade80;
+			}
+			.status-error {
+				background: rgba(255, 0, 0, 0.1);
+				color: #ff6b6b;
+			}
+			.btn-cancel {
+				margin-top: 16px;
+				padding: 10px 24px;
+				border: 1px solid rgba(255, 100, 100, 0.4);
+				border-radius: 8px;
+				background: transparent;
+				color: #ff6b6b;
+				font-size: 0.9rem;
+				cursor: pointer;
+			}
+			.progress-section {
+				margin-top: 24px;
+			}
+			.progress-bar {
+				width: 100%;
+				height: 6px;
+				background: rgba(255, 255, 255, 0.1);
+				border-radius: 3px;
+				overflow: hidden;
+				margin-bottom: 12px;
+			}
+			.progress-fill {
+				height: 100%;
+				width: 0%;
+				border-radius: 3px;
+				background: linear-gradient(90deg, #ffd700, #ff69b4);
+				transition: width 0.3s;
+			}
+			.status-message {
+				padding: 12px 16px;
+				border-radius: 8px;
+				font-size: 0.9rem;
+				text-align: center;
+			}
+			.result-section {
+				background: rgba(74, 222, 128, 0.05);
+				border: 1px solid rgba(74, 222, 128, 0.2);
+				border-radius: 16px;
+				padding: 32px;
+				margin-top: 24px;
+				text-align: center;
+			}
+			.result-icon {
+				font-size: 3rem;
+				margin-bottom: 16px;
+			}
+			.result-section h3 {
+				color: #4ade80;
+				font-size: 1.2rem;
+				margin-bottom: 16px;
+			}
+			.result-url {
+				background: rgba(0, 0, 0, 0.3);
+				padding: 14px 18px;
+				border-radius: 8px;
+				font-family: "SF Mono", Monaco, monospace;
+				font-size: 0.85rem;
+				word-break: break-all;
+				margin-bottom: 16px;
+				color: rgba(255, 255, 255, 0.9);
+			}
+			.btn-copy {
+				padding: 12px 24px;
+				border: none;
+				border-radius: 8px;
+				background: #4ade80;
+				color: #000;
+				font-weight: 600;
+				cursor: pointer;
+			}
+
+			/* Success Modal Styles */
+			.modal-overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.8);
+				backdrop-filter: blur(8px);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 1000;
+				animation: fadeIn 0.3s ease;
+			}
+			@keyframes fadeIn {
+				from {
+					opacity: 0;
+				}
+				to {
+					opacity: 1;
+				}
+			}
+			@keyframes slideUp {
+				from {
+					transform: translateY(30px);
+					opacity: 0;
+				}
+				to {
+					transform: translateY(0);
+					opacity: 1;
+				}
+			}
+			.modal-content {
+				background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+				border: 1px solid rgba(74, 222, 128, 0.3);
+				border-radius: 24px;
+				padding: 40px;
+				max-width: 500px;
+				width: 90%;
+				text-align: center;
+				position: relative;
+				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+					0 0 40px rgba(74, 222, 128, 0.1);
+				animation: slideUp 0.4s ease;
+			}
+			.modal-close {
+				position: absolute;
+				top: 16px;
+				right: 16px;
+				width: 32px;
+				height: 32px;
+				border: none;
+				background: rgba(255, 255, 255, 0.1);
+				color: rgba(255, 255, 255, 0.6);
+				border-radius: 50%;
+				font-size: 20px;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			.modal-close:hover {
+				background: rgba(255, 255, 255, 0.2);
+				color: #fff;
+			}
+			.modal-icon {
+				font-size: 4rem;
+				margin-bottom: 16px;
+				animation: bounce 0.6s ease;
+			}
+			@keyframes bounce {
+				0%,
+				100% {
+					transform: scale(1);
+				}
+				50% {
+					transform: scale(1.2);
+				}
+			}
+			.modal-title {
+				font-size: 1.5rem;
+				font-weight: 700;
+				color: #4ade80;
+				margin-bottom: 8px;
+			}
+			.modal-subtitle {
+				color: rgba(255, 255, 255, 0.6);
+				font-size: 0.95rem;
+				margin-bottom: 24px;
+			}
+			.modal-url {
+				background: rgba(0, 0, 0, 0.4);
+				padding: 16px 20px;
+				border-radius: 12px;
+				font-family: "SF Mono", Monaco, monospace;
+				font-size: 0.9rem;
+				word-break: break-all;
+				margin-bottom: 24px;
+				color: #4ade80;
+				border: 1px solid rgba(74, 222, 128, 0.2);
+			}
+			.modal-actions {
+				display: flex;
+				gap: 12px;
+				justify-content: center;
+			}
+			.btn-copy-modal {
+				padding: 14px 28px;
+				border: none;
+				border-radius: 10px;
+				background: #4ade80;
+				color: #000;
+				font-weight: 600;
+				font-size: 0.95rem;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			.btn-copy-modal:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 4px 16px rgba(74, 222, 128, 0.4);
+			}
+			.btn-visit {
+				padding: 14px 28px;
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				border-radius: 10px;
+				background: transparent;
+				color: #fff;
+				font-weight: 600;
+				font-size: 0.95rem;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			.btn-visit:hover {
+				border-color: rgba(255, 255, 255, 0.4);
+				background: rgba(255, 255, 255, 0.05);
+			}
+
+			/* Warning modal styles */
+			.modal-warning {
+				border-color: rgba(251, 191, 36, 0.3);
+				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+					0 0 40px rgba(251, 191, 36, 0.1);
+			}
+			.modal-title-warning {
+				color: #fbbf24 !important;
+			}
+			.btn-visit-existing {
+				padding: 14px 28px;
+				border: none;
+				border-radius: 10px;
+				background: linear-gradient(135deg, #667eea, #764ba2);
+				color: #fff;
+				font-weight: 600;
+				font-size: 0.95rem;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			.btn-visit-existing:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+			}
+			.btn-try-another {
+				padding: 14px 28px;
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				border-radius: 10px;
+				background: transparent;
+				color: #fff;
+				font-weight: 600;
+				font-size: 0.95rem;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			.btn-try-another:hover {
+				border-color: rgba(255, 255, 255, 0.4);
+				background: rgba(255, 255, 255, 0.05);
+			}
+		</style>
+
+		<script>
+			var form = document.getElementById("generatorForm");
+			var bodyImagesInput = document.getElementById("bodyImages");
+			var musicInput = document.getElementById("music");
+
+			var MAX_FILE_SIZE = 5 * 1024 * 1024;
+			var MIN_IMAGES = 5;
+			var MAX_IMAGES = 15;
+			var MAX_NAME_LEN = 63;
+			var NAME_RE = /^[A-Za-z0-9]+$/;
+			var IMG_EXT = [".png", ".jpg", ".jpeg"];
+			var IMG_MIME = ["image/png", "image/jpeg"];
+			var MUSIC_EXT = [".mp3"];
+			var MUSIC_MIME = ["audio/mpeg", "audio/mp3"];
+
+			var accumulatedImages = [];
+			var pollTimer = null;
+			var pollTimeoutTimer = null;
+			var pollStartTime = null;
+			var PAYMENT_AMOUNT = 29000;
+			var POLL_INTERVAL = 3000;
+			var POLL_TIMEOUT = 10 * 60 * 1000;
+			var SEPAY_ACCOUNT = "96247QTKN";
+			var SEPAY_BANK = "BIDV";
+			var SEPAY_TEMPLATE = "compact";
+			var SEPAY_BRID = "19mN62fT_sS4GCXWrxpohg";
+			var DOMAIN = "ourxmas.pics";
+
+			function showError(id, msg) {
+				var el = document.getElementById(id + "Error");
+				if (el) el.textContent = msg;
+			}
+			function clearError(id) {
+				var el = document.getElementById(id + "Error");
+				if (el) el.textContent = "";
+			}
+			function clearAllErrors() {
+				["projectName", "bodyImages", "music"].forEach(clearError);
+			}
+
+			function validateName(n) {
+				if (!n || !n.trim())
+					return { ok: false, err: "Project name is required" };
+				if (!NAME_RE.test(n))
+					return { ok: false, err: "Only letters and numbers allowed" };
+				if (n.length > MAX_NAME_LEN)
+					return { ok: false, err: "Max " + MAX_NAME_LEN + " characters" };
+				return { ok: true };
+			}
+
+			function validateImage(f) {
+				var ext = "." + f.name.split(".").pop().toLowerCase();
+				if (IMG_EXT.indexOf(ext) === -1 && IMG_MIME.indexOf(f.type) === -1)
+					return {
+						ok: false,
+						err: "Invalid type: " + f.name + ". Use PNG or JPG",
+					};
+				if (f.size > MAX_FILE_SIZE)
+					return { ok: false, err: f.name + " exceeds 5MB" };
+				return { ok: true };
+			}
+
+			function validateMusic(f) {
+				var ext = "." + f.name.split(".").pop().toLowerCase();
+				if (MUSIC_EXT.indexOf(ext) === -1 && MUSIC_MIME.indexOf(f.type) === -1)
+					return {
+						ok: false,
+						err: "Invalid type: " + f.name + ". Only MP3 allowed",
+					};
+				if (f.size > MAX_FILE_SIZE)
+					return { ok: false, err: f.name + " exceeds 5MB" };
+				return { ok: true };
+			}
+
+			function updateCounter() {
+				document.getElementById("imageCounter").textContent =
+					accumulatedImages.length + " / " + MAX_IMAGES + " images";
+			}
+
+			function renderPreviews() {
+				var grid = document.getElementById("bodyPreview");
+				grid.innerHTML = "";
+				for (var i = 0; i < accumulatedImages.length; i++) {
+					(function (index) {
+						var file = accumulatedImages[index];
+						var div = document.createElement("div");
+						div.className = "preview-item";
+						var img = document.createElement("img");
+						img.src = URL.createObjectURL(file);
+						var btn = document.createElement("button");
+						btn.type = "button";
+						btn.className = "preview-remove";
+						btn.innerHTML = "×";
+						btn.onclick = function () {
+							accumulatedImages.splice(index, 1);
+							renderPreviews();
+							updateCounter();
+							clearError("bodyImages");
+						};
+						div.appendChild(img);
+						div.appendChild(btn);
+						grid.appendChild(div);
+					})(i);
+				}
+				updateCounter();
+			}
+
+			function processImages(files, append) {
+				clearError("bodyImages");
+				var valid = [];
+				for (var i = 0; i < files.length; i++) {
+					var v = validateImage(files[i]);
+					if (!v.ok) {
+						showError("bodyImages", v.err);
+						return;
+					}
+					valid.push(files[i]);
+				}
+				if (append) {
+					accumulatedImages = accumulatedImages.concat(valid);
+				} else {
+					accumulatedImages = valid;
+				}
+				if (accumulatedImages.length > MAX_IMAGES) {
+					accumulatedImages = accumulatedImages.slice(0, MAX_IMAGES);
+					showError(
+						"bodyImages",
+						"Max " + MAX_IMAGES + " images. Extra removed."
+					);
+				}
+				renderPreviews();
+			}
+
+			function processMusic(f) {
+				clearError("music");
+				var v = validateMusic(f);
+				if (!v.ok) {
+					showError("music", v.err);
+					musicInput.value = "";
+					return;
+				}
+				var dt = new DataTransfer();
+				dt.items.add(f);
+				musicInput.files = dt.files;
+				document.getElementById("musicPreview").innerHTML =
+					'<div class="music-item"><span>🎵 ' +
+					f.name +
+					" (" +
+					(f.size / 1024 / 1024).toFixed(2) +
+					'MB)</span><button type="button" style="background:rgba(255,0,0,0.85);border:none;border-radius:50%;color:#fff;width:22px;height:22px;cursor:pointer" onclick="removeMusic()">×</button></div>';
+			}
+
+			function removeMusic() {
+				musicInput.value = "";
+				document.getElementById("musicPreview").innerHTML = "";
+				clearError("music");
+			}
+
+			// Drop zone handlers
+			var bodyDropZone = document.getElementById("bodyImagesDropZone");
+			var musicDropZone = document.getElementById("musicDropZone");
+
+			bodyDropZone.ondragover = function (e) {
+				e.preventDefault();
+				bodyDropZone.classList.add("drag-over");
+			};
+			bodyDropZone.ondragleave = function (e) {
+				e.preventDefault();
+				bodyDropZone.classList.remove("drag-over");
+			};
+			bodyDropZone.ondrop = function (e) {
+				e.preventDefault();
+				bodyDropZone.classList.remove("drag-over");
+				processImages(Array.prototype.slice.call(e.dataTransfer.files), true);
+			};
+			bodyDropZone.onclick = function () {
+				bodyImagesInput.click();
+			};
+			bodyImagesInput.onchange = function (e) {
+				processImages(Array.prototype.slice.call(e.target.files), true);
+			};
+
+			musicDropZone.ondragover = function (e) {
+				e.preventDefault();
+				musicDropZone.classList.add("drag-over");
+			};
+			musicDropZone.ondragleave = function (e) {
+				e.preventDefault();
+				musicDropZone.classList.remove("drag-over");
+			};
+			musicDropZone.ondrop = function (e) {
+				e.preventDefault();
+				musicDropZone.classList.remove("drag-over");
+				if (e.dataTransfer.files[0]) processMusic(e.dataTransfer.files[0]);
+			};
+			musicDropZone.onclick = function () {
+				musicInput.click();
+			};
+			musicInput.onchange = function (e) {
+				if (e.target.files[0]) processMusic(e.target.files[0]);
+			};
+
+			// Tree selector
+			var treeOptions = document.querySelectorAll(".tree-option");
+			for (var i = 0; i < treeOptions.length; i++) {
+				(function (opt) {
+					opt.onclick = function () {
+						for (var j = 0; j < treeOptions.length; j++)
+							treeOptions[j].classList.remove("selected");
+						opt.classList.add("selected");
+						opt.querySelector("input").checked = true;
+					};
+				})(treeOptions[i]);
+			}
+
+			// Project name validation
+			document.getElementById("projectName").oninput = function (e) {
+				var v = validateName(e.target.value);
+				if (!v.ok && e.target.value) showError("projectName", v.err);
+				else clearError("projectName");
+				// Hide preview and remaining form when name changes
+				document.getElementById("domainPreview").style.display = "none";
+				document.getElementById("remainingForm").style.display = "none";
+			};
+
+			// Handle Enter key in project name input - trigger Check instead of form submit
+			document.getElementById("projectName").onkeypress = function (e) {
+				if (e.key === "Enter") {
+					e.preventDefault();
+					checkSubdomain();
+				}
+			};
+
+			// Check subdomain availability
+			function checkSubdomain() {
+				var name = document.getElementById("projectName").value.trim();
+				var v = validateName(name);
+				if (!v.ok) {
+					showError("projectName", v.err);
+					return;
+				}
+				clearError("projectName");
+
+				var btn = document.getElementById("checkNameBtn");
+				btn.disabled = true;
+				btn.textContent = "Checking...";
+
+				fetch("/api/project/check/" + encodeURIComponent(name))
+					.then(function (res) {
+						return res.json();
+					})
+					.then(function (data) {
+						btn.disabled = false;
+						btn.textContent = "Check";
+
+						if (data.exists) {
+							// Show modal with existing URL
+							showExistingDomainModal(data.url);
+							document.getElementById("domainPreview").style.display = "none";
+							document.getElementById("remainingForm").style.display = "none";
+						} else {
+							// Show preview and unhide remaining form
+							var previewUrl = "https://" + name.toLowerCase() + "." + DOMAIN;
+							document.getElementById("previewUrl").textContent = previewUrl;
+							document.getElementById("domainPreview").style.display = "flex";
+							document.getElementById("remainingForm").style.display = "block";
+						}
+					})
+					.catch(function (err) {
+						btn.disabled = false;
+						btn.textContent = "Check";
+						showError(
+							"projectName",
+							"Error checking availability: " + err.message
+						);
+					});
+			}
+
+			function showExistingDomainModal(url) {
+				document.getElementById("existingDomainUrl").textContent = url;
+				document.getElementById("existingDomainModal").style.display = "flex";
+			}
+
+			function closeExistingDomainModal() {
+				document.getElementById("existingDomainModal").style.display = "none";
+			}
+
+			function visitExistingDomain() {
+				var url = document.getElementById("existingDomainUrl").textContent;
+				window.open(url, "_blank");
+			}
+
+			function showMessage(msg, type) {
+				var el = document.getElementById("statusMessage");
+				el.textContent = msg;
+				el.className = "status-message status-" + type;
+				document.getElementById("progressSection").style.display = "block";
+			}
+
+			function updateProgress(p) {
+				document.getElementById("progressFill").style.width = p + "%";
+			}
+
+			function generateQRUrl(name) {
+				return (
+					"https://qr.sepay.vn/img?acc=" +
+					SEPAY_ACCOUNT +
+					"&bank=" +
+					SEPAY_BANK +
+					"&amount=" +
+					PAYMENT_AMOUNT +
+					"&des=" +
+					encodeURIComponent(name) +
+					"&template=" +
+					SEPAY_TEMPLATE +
+					"&brid=" +
+					SEPAY_BRID
+				);
+			}
+
+			function showPayment(name) {
+				document.getElementById("qrCodeImage").src = generateQRUrl(name);
+				document.getElementById("paymentStatus").innerHTML =
+					"⏳ Waiting for payment...";
+				document.getElementById("paymentStatus").className =
+					"payment-status status-waiting";
+				document.getElementById("paymentSection").style.display = "block";
+				document.getElementById("submitBtn").disabled = true;
+				document.getElementById("submitBtn").innerHTML =
+					'<span class="btn-icon">⏳</span> Awaiting Payment...';
+				startPolling(name);
+			}
+
+			function cancelPayment() {
+				stopPolling();
+				document.getElementById("paymentSection").style.display = "none";
+				document.getElementById("submitBtn").disabled = false;
+				document.getElementById("submitBtn").innerHTML =
+					'<span class="btn-icon">💳</span> Proceed to Payment';
+			}
+
+			function startPolling(name) {
+				if (pollTimer) clearInterval(pollTimer);
+				if (pollTimeoutTimer) clearTimeout(pollTimeoutTimer);
+				pollStartTime = Date.now();
+				pollTimeoutTimer = setTimeout(function () {
+					stopPolling();
+					document.getElementById("paymentStatus").innerHTML =
+						"⏰ Payment timeout";
+					document.getElementById("paymentStatus").className =
+						"payment-status status-error";
+					document.getElementById("submitBtn").disabled = false;
+					document.getElementById("submitBtn").innerHTML =
+						'<span class="btn-icon">💳</span> Proceed to Payment';
+				}, POLL_TIMEOUT);
+
+				pollTimer = setInterval(function () {
+					var remaining = Math.max(
+						0,
+						POLL_TIMEOUT - (Date.now() - pollStartTime)
+					);
+					var m = Math.floor(remaining / 60000);
+					var s = Math.floor((remaining % 60000) / 1000);
+					document.getElementById("paymentStatus").innerHTML =
+						"⏳ Waiting... (" + m + ":" + (s < 10 ? "0" : "") + s + ")";
+					fetch(
+						"/api/payment/verify/" +
+							encodeURIComponent(name) +
+							"?min_amount=" +
+							PAYMENT_AMOUNT
+					)
+						.then(function (res) {
+							return res.json();
+						})
+						.then(function (data) {
+							if (data.verified) {
+								stopPolling();
+								document.getElementById("paymentStatus").innerHTML =
+									"✅ Payment confirmed!";
+								document.getElementById("paymentStatus").className =
+									"payment-status status-success";
+								setTimeout(proceedGeneration, 1000);
+							}
+						})
+						.catch(function (e) {
+							console.error(e);
+						});
+				}, POLL_INTERVAL);
+			}
+
+			function stopPolling() {
+				if (pollTimer) {
+					clearInterval(pollTimer);
+					pollTimer = null;
+				}
+				if (pollTimeoutTimer) {
+					clearTimeout(pollTimeoutTimer);
+					pollTimeoutTimer = null;
+				}
+			}
+
+			// Form submit
+			form.onsubmit = function (e) {
+				e.preventDefault();
+				console.log("Form submitted!");
+				clearAllErrors();
+
+				var name = document.getElementById("projectName").value.trim();
+				var v = validateName(name);
+				if (!v.ok) {
+					showError("projectName", v.err);
+					showMessage(v.err, "error");
+					return false;
+				}
+
+				if (
+					accumulatedImages.length < MIN_IMAGES ||
+					accumulatedImages.length > MAX_IMAGES
+				) {
+					var err =
+						"Upload " +
+						MIN_IMAGES +
+						"-" +
+						MAX_IMAGES +
+						" images (current: " +
+						accumulatedImages.length +
+						")";
+					showError("bodyImages", err);
+					showMessage(err, "error");
+					return false;
+				}
+
+				for (var i = 0; i < accumulatedImages.length; i++) {
+					var iv = validateImage(accumulatedImages[i]);
+					if (!iv.ok) {
+						showError("bodyImages", iv.err);
+						showMessage(iv.err, "error");
+						return false;
+					}
+				}
+
+				var mf = musicInput.files[0];
+				if (mf) {
+					var mv = validateMusic(mf);
+					if (!mv.ok) {
+						showError("music", mv.err);
+						showMessage(mv.err, "error");
+						return false;
+					}
+				}
+
+				document.getElementById("submitBtn").disabled = true;
+				document.getElementById("submitBtn").innerHTML =
+					'<span class="btn-icon">⏳</span> Validating...';
+
+				var formData = new FormData(form);
+				formData.delete("bodyImages");
+				for (var j = 0; j < accumulatedImages.length; j++) {
+					formData.append("bodyImage" + j, accumulatedImages[j]);
+				}
+
+				fetch("/api/validate", { method: "POST", body: formData })
+					.then(function (res) {
+						return res.json().then(function (data) {
+							return { ok: res.ok, data: data };
+						});
+					})
+					.then(function (result) {
+						if (!result.ok || !result.data.valid) {
+							if (result.data.errors) {
+								var keys = Object.keys(result.data.errors);
+								for (var k = 0; k < keys.length; k++)
+									showError(keys[k], result.data.errors[keys[k]]);
+								showMessage(result.data.errors[keys[0]], "error");
+							} else {
+								showMessage(result.data.error || "Validation failed", "error");
+							}
+							document.getElementById("submitBtn").disabled = false;
+							document.getElementById("submitBtn").innerHTML =
+								'<span class="btn-icon">💳</span> Proceed to Payment';
+							return;
+						}
+
+						return fetch("/api/project/check/" + encodeURIComponent(name))
+							.then(function (res) {
+								return res.json();
+							})
+							.then(function (checkData) {
+								if (checkData.exists) {
+									showMessage(
+										"Project already exists: " + checkData.url,
+										"error"
+									);
+									document.getElementById("resultUrl").textContent =
+										checkData.url;
+									document.getElementById("resultSection").style.display =
+										"block";
+									document.getElementById("submitBtn").disabled = false;
+									document.getElementById("submitBtn").innerHTML =
+										'<span class="btn-icon">💳</span> Proceed to Payment';
+									return;
+								}
+								document.getElementById("submitBtn").disabled = false;
+								document.getElementById("submitBtn").innerHTML =
+									'<span class="btn-icon">💳</span> Proceed to Payment';
+								showPayment(name);
+							});
+					})
+					.catch(function (err) {
+						console.error("Error:", err);
+						showMessage("Error: " + err.message, "error");
+						document.getElementById("submitBtn").disabled = false;
+						document.getElementById("submitBtn").innerHTML =
+							'<span class="btn-icon">💳</span> Proceed to Payment';
+					});
+
+				return false;
+			};
+
+			function proceedGeneration() {
+				var formData = new FormData(form);
+				formData.set("deployTo", "s3");
+				formData.delete("bodyImages");
+				for (var i = 0; i < accumulatedImages.length; i++) {
+					formData.append("bodyImage" + i, accumulatedImages[i]);
+				}
+
+				showMessage("Uploading...", "info");
+				document.getElementById("progressSection").style.display = "block";
+				document.getElementById("resultSection").style.display = "none";
+				updateProgress(10);
+
+				fetch("/api/generate", { method: "POST", body: formData })
+					.then(function (res) {
+						return res.json().then(function (data) {
+							return { ok: res.ok, data: data };
+						});
+					})
+					.then(function (result) {
+						if (result.ok && result.data.success) {
+							updateProgress(100);
+							showMessage(
+								"✅ Done in " + result.data.generationTime + "ms",
+								"success"
+							);
+							document.getElementById("resultUrl").textContent =
+								result.data.publicUrl;
+							document.getElementById("resultSection").style.display = "block";
+							document.getElementById("paymentSection").style.display = "none";
+							document.getElementById("submitBtn").disabled = false;
+							document.getElementById("submitBtn").innerHTML =
+								'<span class="btn-icon">💳</span> Proceed to Payment';
+							// Show success modal popup
+							showSuccessModal(result.data.publicUrl);
+						} else {
+							updateProgress(0);
+							if (result.data.errors) {
+								var keys = Object.keys(result.data.errors);
+								for (var k = 0; k < keys.length; k++)
+									showError(keys[k], result.data.errors[keys[k]]);
+								showMessage(result.data.errors[keys[0]], "error");
+							} else {
+								showMessage(result.data.error || "Generation failed", "error");
+							}
+						}
+					})
+					.catch(function (err) {
+						updateProgress(0);
+						showMessage("Upload failed: " + err.message, "error");
+					});
+			}
+
+			function copyUrl() {
+				navigator.clipboard.writeText(
+					document.getElementById("resultUrl").textContent
+				);
+				alert("URL copied!");
+			}
+
+			function showSuccessModal(url) {
+				document.getElementById("modalResultUrl").textContent = url;
+				document.getElementById("successModal").style.display = "flex";
+			}
+
+			function closeSuccessModal() {
+				document.getElementById("successModal").style.display = "none";
+			}
+
+			function copyModalUrl() {
+				var url = document.getElementById("modalResultUrl").textContent;
+				navigator.clipboard.writeText(url);
+				var btn = document.querySelector(".btn-copy-modal");
+				var originalText = btn.innerHTML;
+				btn.innerHTML = "✅ Copied!";
+				setTimeout(function () {
+					btn.innerHTML = originalText;
+				}, 2000);
+			}
+
+			function visitUrl() {
+				var url = document.getElementById("modalResultUrl").textContent;
+				window.open(url, "_blank");
+			}
+
+			function resetForm() {
+				form.reset();
+				accumulatedImages = [];
+				renderPreviews();
+				document.getElementById("musicPreview").innerHTML = "";
+				clearAllErrors();
+				document.getElementById("progressSection").style.display = "none";
+				document.getElementById("resultSection").style.display = "none";
+				document.getElementById("paymentSection").style.display = "none";
+				document.getElementById("successModal").style.display = "none";
+				document.getElementById("existingDomainModal").style.display = "none";
+				document.getElementById("domainPreview").style.display = "none";
+				document.getElementById("remainingForm").style.display = "none";
+				var opts = document.querySelectorAll(".tree-option");
+				for (var i = 0; i < opts.length; i++) {
+					if (i === 0) {
+						opts[i].classList.add("selected");
+						opts[i].querySelector("input").checked = true;
+					} else {
+						opts[i].classList.remove("selected");
+					}
+				}
+			}
+		</script>
+	</body>
+</html>
