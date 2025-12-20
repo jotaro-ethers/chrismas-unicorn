@@ -13,44 +13,52 @@ class TransactionService:
     def __init__(self, db: Session):
         self.db = db
     
-    def create_transaction(self, payload: SepayWebhookPayload) -> tuple[Transaction, bool]:
+    def _extract_last_part(self, content: str) -> str:
+        """Extract last part from content string.
+        
+        Examples:
+            "111529729955 0338319820 0338319820" -> "0338319820"
+            "BIDV;96247QTKN;beo san" -> "beo san"
+            "0338319820" -> "0338319820"
+        """
+        # Try split by space first
+        if " " in content:
+            return content.split()[-1]
+        # Try split by semicolon
+        if ";" in content:
+            return content.split(";")[-1]
+        return content
+    
+    def create_transaction(self, payload: SepayWebhookPayload) -> Transaction:
         """Create a new transaction from webhook payload.
         
         Returns:
-            tuple: (transaction, is_new) - transaction object and whether it was newly created
+            Transaction: newly created transaction
         """
-        # Check if transaction already exists
-        existing = self.get_transaction_by_sepay_id(payload.id)
-        if existing:
-            return existing, False
-        
         # Parse transaction date
         transaction_date = datetime.strptime(
             payload.transactionDate, "%Y-%m-%d %H:%M:%S"
         )
+        
+        # Extract last part from content
+        parsed_content = self._extract_last_part(payload.content)
         
         transaction = Transaction(
             sepay_id=payload.id,
             gateway=payload.gateway,
             transaction_date=transaction_date,
             account_number=payload.accountNumber,
-            content=payload.content,
+            content=parsed_content,
             transfer_type=payload.transferType,
             amount=payload.transferAmount,
             reference_code=payload.referenceCode,
             description=payload.description,
         )
         
-        try:
-            self.db.add(transaction)
-            self.db.commit()
-            self.db.refresh(transaction)
-            return transaction, True
-        except IntegrityError:
-            self.db.rollback()
-            # Race condition: another request created it
-            existing = self.get_transaction_by_sepay_id(payload.id)
-            return existing, False
+        self.db.add(transaction)
+        self.db.commit()
+        self.db.refresh(transaction)
+        return transaction
     
     def get_transaction(self, transaction_id: int) -> Optional[Transaction]:
         """Get transaction by internal ID."""

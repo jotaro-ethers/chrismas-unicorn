@@ -11,7 +11,7 @@ class Transaction(Base, TimestampMixin):
     __tablename__ = "transactions"
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    sepay_id: Mapped[int] = mapped_column(Integer, unique=True, index=True)
+    sepay_id: Mapped[int] = mapped_column(Integer, index=True)
     gateway: Mapped[str] = mapped_column(String(50))
     transaction_date: Mapped[datetime] = mapped_column(DateTime)
     account_number: Mapped[str] = mapped_column(String(50))

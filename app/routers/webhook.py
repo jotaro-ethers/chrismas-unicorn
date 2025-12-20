@@ -21,15 +21,9 @@ async def sepay_callback(
     and stores them in the database.
     """
     service = TransactionService(db)
-    transaction, is_new = service.create_transaction(payload)
+    transaction = service.create_transaction(payload)
     
-    if is_new:
-        return WebhookResponse(
-            success=True,
-            message=f"Transaction {payload.id} processed successfully"
-        )
-    else:
-        return WebhookResponse(
-            success=True,
-            message=f"Transaction {payload.id} already processed"
-        )
+    return WebhookResponse(
+        success=True,
+        message=f"Transaction {payload.id} processed successfully"
+    )
