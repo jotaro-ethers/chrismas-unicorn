@@ -17,6 +17,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 import boto3
 from dotenv import load_dotenv
@@ -37,6 +40,9 @@ load_dotenv()
 # Settings
 settings = get_settings()
 
+# Rate limiter setup - 200 requests per minute
+limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+
 
 def create_app() -> FastAPI:
     """Create and configure FastAPI application."""
@@ -45,6 +51,10 @@ def create_app() -> FastAPI:
         version=settings.VERSION,
         debug=settings.DEBUG,
     )
+
+    # Add rate limiter
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     # Register CORS middleware
     # Include CloudFront/S3 origins explicitly for proper CORS support
@@ -251,17 +261,20 @@ async def save_locally(project_id: str, files_dict: dict) -> str:
 
 
 @app.get("/")
-async def root():
+@limiter.limit("200/minute")
+async def root(request: Request):
     return FileResponse(str(PUBLIC_DIR / "admin.html"))
 
 
 @app.get("/admin")
-async def admin():
+@limiter.limit("200/minute")
+async def admin(request: Request):
     return FileResponse(str(PUBLIC_DIR / "admin.html"))
 
 
 @app.get("/health")
-async def health_check():
+@limiter.limit("200/minute")
+async def health_check(request: Request):
     return {
         "status": "ok",
         "timestamp": time.time(),
@@ -270,6 +283,7 @@ async def health_check():
 
 
 @app.post("/api/validate")
+@limiter.limit("200/minute")
 async def validate_request(request: Request):
     """Validate form data before payment - returns validation result without generating."""
     from app.validators import validate_generate_request, ValidationError
@@ -287,6 +301,7 @@ async def validate_request(request: Request):
 
 
 @app.post("/api/generate")
+@limiter.limit("50/minute")
 async def generate(request: Request):
     """Generate and deploy Christmas experience (handles arbitrary file fields)"""
     from app.validators import validate_generate_request, ValidationError
@@ -461,7 +476,8 @@ async def generate(request: Request):
 
 
 @app.get("/preview/{project_id}/index.html")
-async def preview(project_id: str):
+@limiter.limit("200/minute")
+async def preview(request: Request, project_id: str):
     preview_file = Path(f"public/preview/{project_id}/index.html")
     if preview_file.exists():
         return FileResponse(preview_file)
@@ -469,7 +485,8 @@ async def preview(project_id: str):
 
 
 @app.get("/preview/{project_id}/{file_path}")
-async def preview_file(project_id: str, file_path: str):
+@limiter.limit("200/minute")
+async def preview_file(request: Request, project_id: str, file_path: str):
     file_full_path = PUBLIC_DIR / "preview" / project_id / file_path
     if file_full_path.exists():
         return FileResponse(file_full_path)
@@ -477,7 +494,8 @@ async def preview_file(project_id: str, file_path: str):
 
 
 @app.get("/api/payment/verify/{project_name}")
-async def verify_payment(project_name: str, min_amount: int = 29000):
+@limiter.limit("200/minute")
+async def verify_payment(request: Request, project_name: str, min_amount: int = 29000):
     """Check if payment with matching content and amount exists in database."""
     try:
         from app.database import SessionLocal
@@ -540,7 +558,8 @@ async def verify_payment(project_name: str, min_amount: int = 29000):
 
 
 @app.get("/api/project/check/{project_name}")
-async def check_project_exists(project_name: str):
+@limiter.limit("200/minute")
+async def check_project_exists(request: Request, project_name: str):
     """Check if project name already exists in transactions (to prevent duplicates)."""
     try:
         from app.database import SessionLocal
