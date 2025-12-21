@@ -978,6 +978,7 @@
 			var SEPAY_TEMPLATE = "compact";
 			var SEPAY_BRID = "19mN62fT_sS4GCXWrxpohg";
 			var DOMAIN = "ourxmas.pics";
+			var BACKEND_URL = "https://chrismas-unicorn-production.up.railway.app";
 
 			function showError(id, msg) {
 				var el = document.getElementById(id + "Error");
@@ -1198,7 +1199,11 @@
 				btn.disabled = true;
 				btn.textContent = "Checking...";
 
-				fetch("/api/project/check/" + encodeURIComponent(name))
+				fetch(BACKEND_URL + "/api/project/check/" + encodeURIComponent(name), {
+					headers: {
+						Accept: "application/json",
+					},
+				})
 					.then(function (res) {
 						return res.json();
 					})
@@ -1317,10 +1322,16 @@
 					document.getElementById("paymentStatus").innerHTML =
 						"⏳ Waiting... (" + m + ":" + (s < 10 ? "0" : "") + s + ")";
 					fetch(
-						"/api/payment/verify/" +
+						BACKEND_URL +
+							"/api/payment/verify/" +
 							encodeURIComponent(name) +
 							"?min_amount=" +
-							PAYMENT_AMOUNT
+							PAYMENT_AMOUNT,
+						{
+							headers: {
+								Accept: "application/json",
+							},
+						}
 					)
 						.then(function (res) {
 							return res.json();
@@ -1412,7 +1423,13 @@
 					formData.append("bodyImage" + j, accumulatedImages[j]);
 				}
 
-				fetch("/api/validate", { method: "POST", body: formData })
+				fetch(BACKEND_URL + "/api/validate", {
+					method: "POST",
+					body: formData,
+					headers: {
+						Accept: "application/json",
+					},
+				})
 					.then(function (res) {
 						return res.json().then(function (data) {
 							return { ok: res.ok, data: data };
@@ -1434,7 +1451,14 @@
 							return;
 						}
 
-						return fetch("/api/project/check/" + encodeURIComponent(name))
+						return fetch(
+							BACKEND_URL + "/api/project/check/" + encodeURIComponent(name),
+							{
+								headers: {
+									Accept: "application/json",
+								},
+							}
+						)
 							.then(function (res) {
 								return res.json();
 							})
@@ -1483,7 +1507,13 @@
 				document.getElementById("resultSection").style.display = "none";
 				updateProgress(10);
 
-				fetch("/api/generate", { method: "POST", body: formData })
+				fetch(BACKEND_URL + "/api/generate", {
+					method: "POST",
+					body: formData,
+					headers: {
+						Accept: "application/json",
+					},
+				})
 					.then(function (res) {
 						return res.json().then(function (data) {
 							return { ok: res.ok, data: data };

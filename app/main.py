@@ -46,12 +46,21 @@ def create_app() -> FastAPI:
         debug=settings.DEBUG,
     )
 
-    # Register CORS middleware (use settings if available, otherwise allow all)
-    allow_origins = getattr(settings, "ALLOWED_ORIGINS", ["*"])
+    # Register CORS middleware
+    # Include CloudFront/S3 origins explicitly for proper CORS support
+    explicit_origins = [
+        "https://ourxmas.pics",
+        "https://www.ourxmas.pics",
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+    ]
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=allow_origins,
-        allow_credentials=True,
+        allow_origins=explicit_origins,
+        # allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
