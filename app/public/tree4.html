@@ -55,20 +55,41 @@
         }
         
         .gesture-guide {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 15px; max-width: 700px; padding: 0 20px; margin-bottom: 40px;
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
+            max-width: 100%;
+            padding: 0 20px;
+            margin-bottom: 40px;
+            overflow-x: auto;
+            justify-content: center;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
         }
+        .gesture-guide::-webkit-scrollbar { display: none; }
         .gesture-item {
             background: rgba(255,215,0,0.05);
             border: 1px solid rgba(255,215,0,0.3);
-            border-radius: 15px; padding: 15px 10px;
-            text-align: center; backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 12px 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
             transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+            flex: 0 0 auto;
+            min-width: 80px;
         }
-        .gesture-item:hover { transform: translateY(-5px); border-color: #FFD700; box-shadow: 0 0 20px rgba(255,215,0,0.4); }
-        .gesture-icon { font-size: 2rem; margin-bottom: 8px; }
-        .gesture-name { color: #FFD700; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
-        .gesture-desc { color: rgba(184,134,11,0.8); font-size: 0.75rem; }
+        .gesture-item:hover { transform: translateY(-3px); border-color: #FFD700; box-shadow: 0 0 20px rgba(255,215,0,0.4); }
+        .gesture-icon { font-size: 1.5rem; margin-bottom: 5px; }
+        .gesture-name { color: #FFD700; font-size: 0.75rem; font-weight: 600; margin-bottom: 2px; }
+        .gesture-desc { color: rgba(184,134,11,0.8); font-size: 0.65rem; }
+        
+        @media (max-width: 600px) {
+            .gesture-guide { justify-content: flex-start; padding: 0 15px; }
+            .gesture-item { min-width: 70px; padding: 10px 8px; }
+            .gesture-icon { font-size: 1.3rem; }
+            .gesture-name { font-size: 0.7rem; }
+            .gesture-desc { font-size: 0.6rem; }
+        }
         
         #btnStart {
             background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%);
@@ -280,7 +301,8 @@
             scene.fog = new THREE.FogExp2(0x0a0505, 0.002);
             camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
             camera.position.z = 100;
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setClearColor(0x0a0505);
             renderer.setSize(innerWidth, innerHeight);
             renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
             container.appendChild(renderer.domElement);

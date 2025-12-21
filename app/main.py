@@ -310,6 +310,67 @@ async def generate(request: Request):
     body_images = validated_data["bodyImages"]
     music_file = validated_data["music"]
 
+    # Verify payment before generating
+    MIN_PAYMENT_AMOUNT = 29000
+    try:
+        from app.database import SessionLocal
+        from app.models.transaction import Transaction
+
+        if SessionLocal is None:
+            logger.error("Database not configured for payment verification")
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "error": "Database not configured"},
+            )
+
+        db = SessionLocal()
+        try:
+            # Check for valid payment with matching content and sufficient amount
+            transaction = (
+                db.query(Transaction)
+                .filter(
+                    Transaction.content.ilike(f"%{projectName}%"),
+                    Transaction.amount >= MIN_PAYMENT_AMOUNT,
+                )
+                .order_by(Transaction.created_at.desc())
+                .first()
+            )
+
+            if not transaction:
+                logger.warning(f"Payment not found for project: {projectName}")
+                return JSONResponse(
+                    status_code=402,
+                    content={
+                        "success": False,
+                        "error": "Payment not verified. Please complete payment first.",
+                    },
+                )
+
+            # Check if already generated (has URL)
+            if transaction.url:
+                logger.info(f"Project already generated: {projectName}, URL: {transaction.url}")
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "success": False,
+                        "error": "This project has already been generated.",
+                        "existingUrl": transaction.url,
+                    },
+                )
+
+            logger.info(
+                f"Payment verified for project: {projectName}, "
+                f"amount: {transaction.amount}, transaction_id: {transaction.id}"
+            )
+        finally:
+            db.close()
+    except Exception as e:
+        logger.exception(f"Error verifying payment: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": f"Payment verification failed: {str(e)}"},
+        )
+
     # Build config & HTML
     config = {
         "projectName": projectName,
@@ -518,4 +579,4 @@ if __name__ == "__main__":
     import uvicorn
 
     # When running locally, run the app object from this module
-    uvicorn.run("app.main:app",host=HOST , port=PORT, reload=True)
+    uvicorn.run("app.main:app", port=PORT, reload=True)
