@@ -161,7 +161,9 @@ def generate_html(config: dict, image_count: int) -> str:
     html_content = html_content.replace(
         "ACCENT_COLOR", json.dumps(config.get("accentColor", "#FFD700"))
     )
-    html_content = html_content.replace("AUDIO_FILE", json.dumps("./audio.mp3", default="../audio.mp3"))
+    # YouTube video ID for background music
+    youtube_video_id = config.get("youtubeVideoId", "")
+    html_content = html_content.replace("YOUTUBE_VIDEO_ID", json.dumps(youtube_video_id))
     return html_content
 
 
@@ -203,21 +205,8 @@ async def upload_to_s3(project_id: str, folder: str, files_dict: dict) -> str:
             ),
         )
 
-    # Music - use user uploaded or default audio.mp3 from public folder
-    music = files_dict.get("music")
-    if music:
-        # User uploaded custom music
-        key = f"{base_key}/audio.mp3"
-        data = music["data"]
-        content_type = music.get("content_type", "audio/mpeg")
-        await loop.run_in_executor(
-            executor,
-            lambda _key=key, _data=data, _ct=content_type: s3_client.put_object(
-                Bucket=bucket, Key=_key, Body=_data, ContentType=_ct
-            ),
-        )
-    else:
-        # Use default audio.mp3 from public folder
+    # Upload default audio.mp3 if no YouTube URL provided (for fallback)
+    if not files_dict.get("youtubeVideoId"):
         default_audio_path = PUBLIC_DIR / "audio.mp3"
         if default_audio_path.exists():
             with open(default_audio_path, "rb") as f:
@@ -248,11 +237,13 @@ async def save_locally(project_id: str, files_dict: dict) -> str:
         async with aiofiles.open(preview_dir / fname, "wb") as f:
             await f.write(img["data"])
 
-    music = files_dict.get("music")
-    if music:
-        fname = music.get("filename", "audio.mp3")
-        async with aiofiles.open(preview_dir / fname, "wb") as f:
-            await f.write(music["data"])
+    # Copy default audio.mp3 if no YouTube URL provided
+    if not files_dict.get("youtubeVideoId"):
+        default_audio_path = PUBLIC_DIR / "audio.mp3"
+        if default_audio_path.exists():
+            import shutil
+
+            shutil.copy(default_audio_path, preview_dir / "audio.mp3")
 
     return f"http://localhost:{PORT}/preview/{project_id}/index.html"
 
@@ -333,7 +324,7 @@ async def generate(request: Request):
     deployTo = validated_data["deployTo"]
     s3Folder = validated_data["s3Folder"]
     body_images = validated_data["bodyImages"]
-    music_file = validated_data["music"]
+    youtube_video_id = validated_data["youtubeVideoId"]
 
     # Verify payment before generating
     MIN_PAYMENT_AMOUNT = 29000
@@ -405,14 +396,12 @@ async def generate(request: Request):
         "treeColor": treeColor,
         "accentColor": accentColor,
         "foliageCount": (int(foliageCount) if foliageCount and str(foliageCount).isdigit() else 15000),
-        "music_file": bool(music_file),
+        "youtubeVideoId": youtube_video_id,
     }
     html_content = generate_html(config, len(body_images))
 
     # Prepare files dict
-    files_dict = {"html": html_content, "bodyImages": body_images}
-    if music_file:
-        files_dict["music"] = music_file
+    files_dict = {"html": html_content, "bodyImages": body_images, "youtubeVideoId": youtube_video_id}
 
     # Deploy
     try:
@@ -497,6 +486,7 @@ async def preview_file(request: Request, project_id: str, file_path: str):
 @limiter.limit("200/minute")
 async def verify_payment(request: Request, project_name: str, min_amount: int = 29000):
     """Check if payment with matching content and amount exists in database."""
+
     try:
         from app.database import SessionLocal
         from app.models.transaction import Transaction

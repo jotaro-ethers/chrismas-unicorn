@@ -296,23 +296,21 @@
 							<div class="field-error" id="bodyImagesError"></div>
 						</div>
 						<div class="form-group">
-							<label
+							<label for="youtubeUrl"
 								>Background Music
-								<span class="label-hint">(optional • MP3 only)</span></label
+								<span class="label-hint">(optional • YouTube URL)</span></label
 							>
-							<div id="musicDropZone" class="drop-zone drop-zone-small">
-								<div class="drop-zone-text">
-									🎵 Drop MP3 file or click to browse
-								</div>
-							</div>
 							<input
-								type="file"
-								id="music"
-								name="music"
-								accept=".mp3,audio/mpeg"
-								style="display: none" />
-							<div id="musicPreview"></div>
-							<div class="field-error" id="musicError"></div>
+								type="text"
+								id="youtubeUrl"
+								name="youtubeUrl"
+								class="input"
+								placeholder="e.g., https://www.youtube.com/watch?v=VIDEO_ID" />
+							<div class="youtube-hint">
+								🎵 Paste a YouTube video URL for background music. If not it will use the default audio.
+							</div>
+							<div id="youtubePreview"></div>
+							<div class="field-error" id="youtubeError"></div>
 						</div>
 					</div>
 
@@ -380,7 +378,10 @@
 					<div class="card" id="paymentSection" style="display: none">
 						<div class="card-title">💳 Payment</div>
 						<div class="payment-content">
+							<div class="sale-badge">🔥 SALE OFF 70%</div>
+							<p class="payment-original-price">99,000 VND</p>
 							<p class="payment-amount">29,000 VND</p>
+							<p class="sale-description">🎄 Christmas Special Promotion - Limited Time Only!</p>
 							<p class="payment-instruction">
 								Scan QR code to complete payment
 							</p>
@@ -548,6 +549,29 @@
 			.music-item span {
 				color: rgba(255, 255, 255, 0.8);
 				font-size: 0.9rem;
+			}
+			.youtube-hint {
+				font-size: 0.8rem;
+				color: rgba(255, 255, 255, 0.5);
+				margin-top: 8px;
+			}
+			.youtube-preview {
+				margin-top: 12px;
+				padding: 12px 16px;
+				background: rgba(255, 0, 0, 0.1);
+				border: 1px solid rgba(255, 0, 0, 0.3);
+				border-radius: 8px;
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+			.youtube-preview-icon {
+				font-size: 1.5rem;
+			}
+			.youtube-preview-text {
+				color: rgba(255, 255, 255, 0.8);
+				font-size: 0.85rem;
+				word-break: break-all;
 			}
 			.tree-selector {
 				display: flex;
@@ -763,11 +787,40 @@
 				text-align: center;
 				padding: 20px 0;
 			}
-			.payment-amount {
-				font-size: 2rem;
+			.sale-badge {
+				display: inline-block;
+				background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+				color: #fff;
+				padding: 8px 20px;
+				border-radius: 20px;
 				font-weight: 700;
-				color: #ffd700;
+				font-size: 1.1rem;
+				margin-bottom: 12px;
+				animation: pulse 1.5s ease-in-out infinite;
+				box-shadow: 0 4px 15px rgba(255, 68, 68, 0.4);
+			}
+			@keyframes pulse {
+				0%, 100% { transform: scale(1); }
+				50% { transform: scale(1.05); }
+			}
+			.payment-original-price {
+				font-size: 1.2rem;
+				color: rgba(255, 255, 255, 0.5);
+				text-decoration: line-through;
+				margin-bottom: 4px;
+			}
+			.payment-amount {
+				font-size: 2.5rem;
+				font-weight: 700;
+				color: #00ff88;
 				margin-bottom: 8px;
+				text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+			}
+			.sale-description {
+				color: #ff69b4;
+				font-size: 0.95rem;
+				margin-bottom: 16px;
+				font-weight: 500;
 			}
 			.payment-instruction {
 				color: rgba(255, 255, 255, 0.6);
@@ -1080,18 +1133,14 @@
 		<script>
 			var form = document.getElementById("generatorForm");
 			var bodyImagesInput = document.getElementById("bodyImages");
-			var musicInput = document.getElementById("music");
 
 			var MAX_FILE_SIZE = 5 * 1024 * 1024;
-			var MAX_MUSIC_FILE_SIZE = 50 * 1024 * 1024;
 			var MIN_IMAGES = 5;
 			var MAX_IMAGES = 15;
 			var MAX_NAME_LEN = 63;
 			var NAME_RE = /^[A-Za-z0-9]+$/;
 			var IMG_EXT = [".png", ".jpg", ".jpeg"];
 			var IMG_MIME = ["image/png", "image/jpeg"];
-			var MUSIC_EXT = [".mp3"];
-			var MUSIC_MIME = ["audio/mpeg", "audio/mp3"];
 
 			var accumulatedImages = [];
 			var pollTimer = null;
@@ -1116,7 +1165,7 @@
 				if (el) el.textContent = "";
 			}
 			function clearAllErrors() {
-				["projectName", "bodyImages", "music"].forEach(clearError);
+				["projectName", "bodyImages", "youtube"].forEach(clearError);
 			}
 
 			function validateName(n) {
@@ -1141,16 +1190,26 @@
 				return { ok: true };
 			}
 
-			function validateMusic(f) {
-				var ext = "." + f.name.split(".").pop().toLowerCase();
-				if (MUSIC_EXT.indexOf(ext) === -1 && MUSIC_MIME.indexOf(f.type) === -1)
-					return {
-						ok: false,
-						err: "Invalid type: " + f.name + ". Only MP3 allowed",
-					};
-				if (f.size > MAX_MUSIC_FILE_SIZE)
-					return { ok: false, err: f.name + " exceeds 50MB" };
-				return { ok: true };
+			function extractYouTubeId(url) {
+				if (!url) return null;
+				var patterns = [
+					/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+					/^([a-zA-Z0-9_-]{11})$/
+				];
+				for (var i = 0; i < patterns.length; i++) {
+					var match = url.match(patterns[i]);
+					if (match) return match[1];
+				}
+				return null;
+			}
+
+			function validateYouTubeUrl(url) {
+				if (!url || !url.trim()) return { ok: true, videoId: null }; // Optional field
+				var videoId = extractYouTubeId(url);
+				if (!videoId) {
+					return { ok: false, err: "Invalid YouTube URL. Please use a valid YouTube video link." };
+				}
+				return { ok: true, videoId: videoId };
 			}
 
 			function updateCounter() {
@@ -1212,34 +1271,8 @@
 				renderPreviews();
 			}
 
-			function processMusic(f) {
-				clearError("music");
-				var v = validateMusic(f);
-				if (!v.ok) {
-					showError("music", v.err);
-					musicInput.value = "";
-					return;
-				}
-				var dt = new DataTransfer();
-				dt.items.add(f);
-				musicInput.files = dt.files;
-				document.getElementById("musicPreview").innerHTML =
-					'<div class="music-item"><span>🎵 ' +
-					f.name +
-					" (" +
-					(f.size / 1024 / 1024).toFixed(2) +
-					'MB)</span><button type="button" style="background:rgba(255,0,0,0.85);border:none;border-radius:50%;color:#fff;width:22px;height:22px;cursor:pointer" onclick="removeMusic()">×</button></div>';
-			}
-
-			function removeMusic() {
-				musicInput.value = "";
-				document.getElementById("musicPreview").innerHTML = "";
-				clearError("music");
-			}
-
 			// Drop zone handlers
 			var bodyDropZone = document.getElementById("bodyImagesDropZone");
-			var musicDropZone = document.getElementById("musicDropZone");
 
 			bodyDropZone.ondragover = function (e) {
 				e.preventDefault();
@@ -1261,24 +1294,28 @@
 				processImages(Array.prototype.slice.call(e.target.files), true);
 			};
 
-			musicDropZone.ondragover = function (e) {
-				e.preventDefault();
-				musicDropZone.classList.add("drag-over");
-			};
-			musicDropZone.ondragleave = function (e) {
-				e.preventDefault();
-				musicDropZone.classList.remove("drag-over");
-			};
-			musicDropZone.ondrop = function (e) {
-				e.preventDefault();
-				musicDropZone.classList.remove("drag-over");
-				if (e.dataTransfer.files[0]) processMusic(e.dataTransfer.files[0]);
-			};
-			musicDropZone.onclick = function () {
-				musicInput.click();
-			};
-			musicInput.onchange = function (e) {
-				if (e.target.files[0]) processMusic(e.target.files[0]);
+			// YouTube URL input handler
+			var youtubeInput = document.getElementById("youtubeUrl");
+			youtubeInput.oninput = function (e) {
+				clearError("youtube");
+				var url = e.target.value.trim();
+				var preview = document.getElementById("youtubePreview");
+				
+				if (!url) {
+					preview.innerHTML = "";
+					return;
+				}
+				
+				var result = validateYouTubeUrl(url);
+				if (!result.ok) {
+					showError("youtube", result.err);
+					preview.innerHTML = "";
+				} else if (result.videoId) {
+					preview.innerHTML = '<div class="youtube-preview">' +
+						'<span class="youtube-preview-icon">▶️</span>' +
+						'<span class="youtube-preview-text">YouTube Video ID: ' + result.videoId + '</span>' +
+						'</div>';
+				}
 			};
 
 			// Tree selector
@@ -1530,12 +1567,13 @@
 					}
 				}
 
-				var mf = musicInput.files[0];
-				if (mf) {
-					var mv = validateMusic(mf);
-					if (!mv.ok) {
-						showError("music", mv.err);
-						showMessage(mv.err, "error");
+				// Validate YouTube URL if provided
+				var youtubeUrl = document.getElementById("youtubeUrl").value.trim();
+				if (youtubeUrl) {
+					var yv = validateYouTubeUrl(youtubeUrl);
+					if (!yv.ok) {
+						showError("youtube", yv.err);
+						showMessage(yv.err, "error");
 						return false;
 					}
 				}

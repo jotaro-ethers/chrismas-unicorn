@@ -225,6 +225,7 @@
     <button id="debug-btn" class="on" onclick="toggleDebug()">ON</button>
     <div class="mini-guide">✊ Tree | 🖐 Explode | ☝️ Rotate 4D | 🫶 Heart | 🤏 Photo</div>
     <div id="main-snowflakes"></div>
+    <div id="youtube-player" style="position:absolute;top:-9999px;left:-9999px;"></div>
     <div id="canvas-container"></div>
 
     <script>
@@ -692,10 +693,56 @@
             document.getElementById('debug-btn').style.display = 'block';
             document.querySelector('.mini-guide').style.display = 'block';
             createMainSnowflakes();
-            const music = new Audio(AUDIO_FILE);
-            music.loop = true; music.volume = 0.7; music.play().catch(() => {});
+            
+            // Load YouTube IFrame API if video ID is provided, otherwise use default audio
+            if (typeof YOUTUBE_VIDEO_ID !== 'undefined' && YOUTUBE_VIDEO_ID) {
+                var tag = document.createElement('script');
+                tag.src = 'https://www.youtube.com/iframe_api';
+                var firstScriptTag = document.getElementsByTagName('script')[0];
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+            } else {
+                // Fallback to default audio
+                var music = new Audio('../audio.mp3');
+                music.loop = true;
+                music.volume = 0.7;
+                music.play().catch(function() {});
+            }
+            
             init3D();
             await initHandDetection();
+        }
+
+        // YouTube IFrame API
+        var ytPlayer = null;
+        function onYouTubeIframeAPIReady() {
+            if (typeof YOUTUBE_VIDEO_ID !== 'undefined' && YOUTUBE_VIDEO_ID) {
+                ytPlayer = new YT.Player('youtube-player', {
+                    height: '0',
+                    width: '0',
+                    videoId: YOUTUBE_VIDEO_ID,
+                    playerVars: {
+                        autoplay: 1,
+                        loop: 1,
+                        playlist: YOUTUBE_VIDEO_ID,
+                        controls: 0,
+                        showinfo: 0,
+                        modestbranding: 1,
+                        fs: 0,
+                        cc_load_policy: 0,
+                        iv_load_policy: 3,
+                        autohide: 1
+                    },
+                    events: {
+                        onReady: function(event) {
+                            event.target.setVolume(70);
+                            event.target.playVideo();
+                        },
+                        onError: function(event) {
+                            console.log('YouTube player error:', event.data);
+                        }
+                    }
+                });
+            }
         }
 
         function createMainSnowflakes() {

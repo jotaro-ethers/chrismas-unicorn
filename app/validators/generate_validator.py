@@ -7,7 +7,6 @@ from PIL import Image
 
 # Constants
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB for images
-MAX_MUSIC_FILE_SIZE = 50 * 1024 * 1024  # 50 MB for music
 MIN_IMAGES = 5
 MAX_IMAGES = 15
 MAX_NAME_LEN = 63
@@ -16,8 +15,13 @@ PROJECT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9]+$")
 ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}
 ALLOWED_IMAGE_MIMETYPES = {"image/png", "image/jpeg"}
 
-ALLOWED_MUSIC_EXTENSIONS = {".mp3"}
-ALLOWED_MUSIC_MIMETYPES = {"audio/mpeg", "audio/mp3"}
+# YouTube URL patterns
+YOUTUBE_URL_PATTERNS = [
+    re.compile(r"(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})"),
+    re.compile(r"(?:https?://)?(?:www\.)?youtube\.com/embed/([a-zA-Z0-9_-]{11})"),
+    re.compile(r"(?:https?://)?(?:www\.)?youtu\.be/([a-zA-Z0-9_-]{11})"),
+    re.compile(r"(?:https?://)?(?:www\.)?youtube\.com/v/([a-zA-Z0-9_-]{11})"),
+]
 
 
 class ValidationError(Exception):
@@ -75,22 +79,36 @@ def validate_image_file(
     return True, ""
 
 
-def validate_music_file(
-    filename: str, content_type: str, size: int
-) -> Tuple[bool, str]:
-    """Validate music file - only MP3 allowed, max 50 MB."""
-    ext = get_file_extension(filename)
+def extract_youtube_video_id(url: str) -> str:
+    """Extract YouTube video ID from various URL formats."""
+    if not url or not url.strip():
+        return ""
 
-    if (
-        ext not in ALLOWED_MUSIC_EXTENSIONS
-        and content_type not in ALLOWED_MUSIC_MIMETYPES
-    ):
-        return False, f"Invalid audio type: {filename}. Only MP3 files are allowed"
+    url = url.strip()
 
-    if size > MAX_MUSIC_FILE_SIZE:
-        return False, f"Audio file '{filename}' exceeds 50 MB limit"
+    for pattern in YOUTUBE_URL_PATTERNS:
+        match = pattern.search(url)
+        if match:
+            return match.group(1)
 
-    return True, ""
+    return ""
+
+
+def validate_youtube_url(url: str) -> Tuple[bool, str, str]:
+    """
+    Validate YouTube URL and extract video ID.
+    Returns (is_valid, error_message, video_id).
+    """
+    if not url or not url.strip():
+        # YouTube URL is optional
+        return True, "", ""
+
+    video_id = extract_youtube_video_id(url)
+
+    if not video_id:
+        return False, "Invalid YouTube URL. Please provide a valid YouTube video link.", ""
+
+    return True, "", video_id
 
 
 def convert_image_to_jpeg(image_data: bytes, filename: str) -> Tuple[bytes, str, str]:
@@ -155,9 +173,21 @@ async def validate_generate_request(form) -> Dict[str, Any]:
     if not valid:
         errors["projectName"] = error
 
+    # Validate YouTube URL (optional)
+    youtube_url = form.get("youtubeUrl", "")
+    if isinstance(youtube_url, str):
+        youtube_url = youtube_url.strip()
+    else:
+        youtube_url = ""
+
+    youtube_video_id = ""
+    if youtube_url:
+        valid, error, youtube_video_id = validate_youtube_url(youtube_url)
+        if not valid:
+            errors["youtubeUrl"] = error
+
     # Collect and validate files
     body_images: List[Dict[str, Any]] = []
-    music_file = None
     seen_filenames = set()
 
     for key in form.keys():
@@ -204,14 +234,6 @@ async def validate_generate_request(form) -> Dict[str, Any]:
                     entry["content_type"] = new_content_type
                     entry["size"] = len(converted_data)
                     body_images.append(entry)
-            elif key == "music":
-                valid, error = validate_music_file(
-                    filename, content_type or "", file_size
-                )
-                if not valid:
-                    errors["music"] = error
-                else:
-                    music_file = entry
 
     # Validate image count
     if len(body_images) < MIN_IMAGES:
@@ -239,5 +261,5 @@ async def validate_generate_request(form) -> Dict[str, Any]:
         "deployTo": form.get("deployTo", "s3"),
         "s3Folder": form.get("s3Folder", "christmas-experience-bucket"),
         "bodyImages": body_images,
-        "music": music_file,
+        "youtubeVideoId": youtube_video_id,
     }
