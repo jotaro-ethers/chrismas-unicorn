@@ -10,7 +10,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             overflow: hidden; 
-            background: radial-gradient(ellipse at bottom, #2a1810 0%, #0a0505 100%);
+            background: radial-gradient(ellipse at bottom, #1a1208 0%, #080604 100%);
             font-family: 'Poppins', sans-serif; 
         }
         #canvas-container { width: 100%; height: 100vh; position: fixed; top: 0; left: 0; }
@@ -18,7 +18,7 @@
         #welcome-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 200; background: radial-gradient(ellipse at bottom, #2a1810 0%, #0a0505 100%);
+            z-index: 200; background: radial-gradient(ellipse at bottom, #1a1208 0%, #080604 100%);
             transition: opacity 0.8s ease, visibility 0.8s;
         }
         #welcome-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -115,6 +115,43 @@
         #debug-btn.on { background: rgba(255,215,0,0.8); color: #000; }
         #debug-btn.off { background: rgba(100,100,100,0.6); color: #fff; }
         .mini-guide { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: rgba(255,215,0,0.5); font-size: 12px; z-index: 100; text-align: center; display: none; }
+        
+        /* Main snow effect container */
+        #main-snowflakes { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 50; display: none; }
+        #main-snowflakes .snowflake {
+            position: absolute; color: #FFD700; font-size: 1.5em;
+            animation: fall linear infinite;
+            opacity: 0.8; text-shadow: 0 0 10px #FFD700, 0 0 20px #B8860B;
+        }
+        
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            #camera-preview { width: 120px; height: 90px; top: 5px; right: 5px; }
+            #debug { font-size: 9px; padding: 5px 8px; top: 5px; left: 5px; }
+            #debug-btn { top: 100px; right: 5px; width: 40px; height: 20px; font-size: 8px; }
+            .mini-guide { font-size: 10px; bottom: 10px; padding: 0 10px; }
+            #btnStart { padding: 14px 40px; font-size: 1rem; letter-spacing: 1px; }
+            .welcome-subtitle { margin-bottom: 25px; }
+        }
+        
+        @media (max-width: 480px) {
+            #camera-preview { width: 100px; height: 75px; }
+            #debug { font-size: 8px; padding: 4px 6px; max-width: 100px; }
+            #debug-btn { top: 85px; width: 35px; height: 18px; font-size: 7px; }
+            .mini-guide { font-size: 8px; white-space: nowrap; overflow-x: auto; max-width: 100%; }
+            #btnStart { padding: 12px 30px; font-size: 0.9rem; }
+            .welcome-title { margin-bottom: 5px; }
+            .welcome-subtitle { font-size: 0.9rem; margin-bottom: 20px; }
+        }
+        
+        @media (max-height: 600px) {
+            .welcome-title { font-size: clamp(2rem, 8vw, 4rem); }
+            .welcome-subtitle { margin-bottom: 15px; }
+            .gesture-guide { margin-bottom: 20px; }
+            .gesture-item { padding: 8px 6px; min-width: 60px; }
+            .gesture-icon { font-size: 1.2rem; }
+            #btnStart { padding: 12px 35px; }
+        }
     </style>
 </head>
 <body>
@@ -132,13 +169,13 @@
         </div>
         
         <button id="btnStart" onclick="startSystem()">Start Magic</button>
-        <div id="copyright">by vandiep</div>
     </div>
     
     <div id="debug">Loading...</div>
     <video id="camera-preview" autoplay playsinline></video>
     <button id="debug-btn" class="on" onclick="toggleDebug()">ON</button>
     <div class="mini-guide">✊ Tree | 🖐 Explode | ☝️ Rotate 4D | 🫶 Heart | 🤏 Photo</div>
+    <div id="main-snowflakes"></div>
     <div id="canvas-container"></div>
 
     <script>
@@ -173,23 +210,27 @@
             photoTextures.push(loader.load(`./image${i}.jpeg`));
         }
 
-        // GOLDEN LUXURY THEME: Gold and Bronze
+        // GOLDEN LUXURY THEME: Deep Green Tree with Gold & Bronze Ornaments
         function createTexture(type) {
             const canvas = document.createElement('canvas');
             canvas.width = canvas.height = 128;
             const ctx = canvas.getContext('2d');
             const cx = 64;
             if (type === 'gold') {
+                // Tree foliage - deep emerald green
                 const g = ctx.createRadialGradient(cx,cx,0,cx,cx,40);
-                g.addColorStop(0,'#FFF'); g.addColorStop(0.2,'#FFFACD');
-                g.addColorStop(0.5,'#FFD700'); g.addColorStop(1,'transparent');
+                g.addColorStop(0,'#2d5a27'); g.addColorStop(0.3,'#1a4d1a');
+                g.addColorStop(0.6,'#0d3d0d'); g.addColorStop(1,'transparent');
                 ctx.fillStyle = g; ctx.fillRect(0,0,128,128);
             } else if (type === 'red') {
+                // Gold ornaments - bright gold with warm glow
                 const g = ctx.createRadialGradient(cx,cx,0,cx,cx,50);
-                g.addColorStop(0,'#FFE4B5'); g.addColorStop(0.3,'#B8860B'); g.addColorStop(1,'transparent');
+                g.addColorStop(0,'#FFF8DC'); g.addColorStop(0.2,'#FFD700');
+                g.addColorStop(0.5,'#DAA520'); g.addColorStop(1,'transparent');
                 ctx.fillStyle = g; ctx.fillRect(0,0,128,128);
             } else {
-                ctx.fillStyle = '#B8860B'; ctx.fillRect(20,20,88,88);
+                // Gift boxes - bronze with gold ribbon
+                ctx.fillStyle = '#8B4513'; ctx.fillRect(20,20,88,88);
                 ctx.fillStyle = '#FFD700'; ctx.fillRect(54,20,20,88); ctx.fillRect(20,54,88,20);
             }
             return new THREE.CanvasTexture(canvas);
@@ -298,11 +339,11 @@
         function init3D() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x0a0505, 0.002);
+            scene.fog = new THREE.FogExp2(0x080604, 0.002);
             camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
             camera.position.z = 100;
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-            renderer.setClearColor(0x0a0505);
+            renderer.setClearColor(0x080604);
             renderer.setSize(innerWidth, innerHeight);
             renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
@@ -338,8 +379,8 @@
             const geo = new THREE.BufferGeometry();
             geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
             const colors = new Float32Array(count * 3);
-            // GOLDEN: Gold and Bronze shades
-            const baseColor = new THREE.Color(type === 'gold' ? 0xFFD700 : type === 'red' ? 0xB8860B : 0xFFF8DC);
+            // GOLDEN LUXURY: Green tree, Gold ornaments, Cream gifts
+            const baseColor = new THREE.Color(type === 'gold' ? 0x1a4d1a : type === 'red' ? 0xFFD700 : 0xFFF8DC);
             for (let i = 0; i < count; i++) { colors[i*3] = baseColor.r; colors[i*3+1] = baseColor.g; colors[i*3+2] = baseColor.b; }
             geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
             geo.userData = { tree: treeTargets, explode: explodeTargets, heart: heartTargets, phases, baseColor, baseSize: size };
@@ -392,15 +433,61 @@
             starMesh.position.set(0, CONFIG.treeHeight/2 + 2, 0);
             scene.add(starMesh);
             
+            // Love text with word wrap and background (Golden Luxury theme)
             const c3 = document.createElement('canvas');
-            c3.width = 1024; c3.height = 256;
+            c3.width = 1024; c3.height = 512;
             const ctx3 = c3.getContext('2d');
-            ctx3.font = 'bold 120px "Segoe UI"';
-            ctx3.fillStyle = '#FFD700'; ctx3.textAlign = 'center';
-            ctx3.shadowColor = '#B8860B'; ctx3.shadowBlur = 40;
-            ctx3.fillText(LOVE_TEXT, 512, 130);
-            loveMesh = new THREE.Mesh(new THREE.PlaneGeometry(70, 18), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c3), transparent: true, blending: THREE.AdditiveBlending }));
-            loveMesh.position.set(0, 0, 20);
+            
+            // Text settings
+            ctx3.fillStyle = '#FFD700';
+            ctx3.textAlign = 'center';
+            ctx3.textBaseline = 'middle';
+            ctx3.shadowColor = '#B8860B';
+            ctx3.shadowBlur = 30;
+            
+            // Word wrap function
+            function wrapText(ctx, text, maxWidth, fontSize) {
+                ctx.font = `bold ${fontSize}px "Segoe UI"`;
+                const words = text.split(' ');
+                const lines = [];
+                let currentLine = '';
+                
+                for (const word of words) {
+                    const testLine = currentLine ? currentLine + ' ' + word : word;
+                    const metrics = ctx.measureText(testLine);
+                    if (metrics.width > maxWidth && currentLine) {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    } else {
+                        currentLine = testLine;
+                    }
+                }
+                if (currentLine) lines.push(currentLine);
+                return lines;
+            }
+            
+            // Calculate font size and wrap text
+            let fontSize = 80;
+            let lines = wrapText(ctx3, LOVE_TEXT, 850, fontSize);
+            
+            // Reduce font size if too many lines
+            while (lines.length > 4 && fontSize > 40) {
+                fontSize -= 10;
+                lines = wrapText(ctx3, LOVE_TEXT, 850, fontSize);
+            }
+            
+            // Draw wrapped text
+            ctx3.font = `bold ${fontSize}px "Segoe UI"`;
+            const lineHeight = fontSize * 1.3;
+            const totalHeight = lines.length * lineHeight;
+            const startY = 256 - totalHeight / 2 + lineHeight / 2;
+            
+            lines.forEach((line, i) => {
+                ctx3.fillText(line, 512, startY + i * lineHeight);
+            });
+            
+            loveMesh = new THREE.Mesh(new THREE.PlaneGeometry(70, 35), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c3), transparent: true }));
+            loveMesh.position.set(0, 5, 25);
             loveMesh.visible = false;
             scene.add(loveMesh);
         }
@@ -426,11 +513,21 @@
                 group.rotation.y += currentRotationSpeedY;
                 group.rotation.x += currentRotationSpeedX;
             }
-            // GOLDEN: Elegant shimmer effect
+            // GOLDEN LUXURY: Elegant shimmer - green tree breathes, gold sparkles
             for (let i = 0; i < count; i++) {
                 let b = 1;
-                if (targetState === 'TREE') b = 0.7 + 0.4 * Math.sin(time * 4 + phases[i]);
-                else if (targetState !== 'HEART') b = 0.6 + 0.5 * Math.sin(time * 8 + phases[i]);
+                if (type === 'gold') {
+                    // Green tree - subtle breathing
+                    if (targetState === 'TREE') b = 0.8 + 0.2 * Math.sin(time * 1.5 + phases[i]);
+                    else b = 0.7 + 0.3 * Math.sin(time * 3 + phases[i]);
+                } else if (type === 'red') {
+                    // Gold ornaments - bright sparkle
+                    if (targetState === 'TREE') b = 0.6 + 0.5 * Math.sin(time * 6 + phases[i]);
+                    else b = 0.5 + 0.6 * Math.sin(time * 10 + phases[i]);
+                } else {
+                    // Gifts - gentle glow
+                    b = 0.8 + 0.2 * Math.sin(time * 2 + phases[i]);
+                }
                 colors[i*3] = baseColor.r * b; colors[i*3+1] = baseColor.g * b; colors[i*3+2] = baseColor.b * b;
             }
             group.geometry.attributes.color.needsUpdate = true;
@@ -522,10 +619,29 @@
             document.getElementById('camera-preview').classList.add('visible');
             document.getElementById('debug-btn').style.display = 'block';
             document.querySelector('.mini-guide').style.display = 'block';
-            const music = new Audio('../audio.mp3');
+            createMainSnowflakes();
+            const music = new Audio(AUDIO_FILE);
             music.loop = true; music.volume = 0.7; music.play().catch(() => {});
             init3D();
             await initHandDetection();
+        }
+
+        function createMainSnowflakes() {
+            const container = document.getElementById('main-snowflakes');
+            container.style.display = 'block';
+            const flakes = ['✦', '✧', '★', '☆', '✶'];
+            const count = window.innerWidth < 480 ? 40 : window.innerWidth < 768 ? 60 : 80;
+            for (let i = 0; i < count; i++) {
+                const flake = document.createElement('div');
+                flake.className = 'snowflake';
+                flake.textContent = flakes[Math.floor(Math.random() * flakes.length)];
+                flake.style.left = Math.random() * 100 + '%';
+                flake.style.animationDuration = (Math.random() * 6 + 4) + 's';
+                flake.style.animationDelay = Math.random() * 3 + 's';
+                flake.style.fontSize = (Math.random() * 1.2 + 0.5) + 'em';
+                flake.style.opacity = Math.random() * 0.6 + 0.2;
+                container.appendChild(flake);
+            }
         }
 
         let debugVisible = true;

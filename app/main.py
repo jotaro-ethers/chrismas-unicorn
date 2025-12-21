@@ -151,6 +151,7 @@ def generate_html(config: dict, image_count: int) -> str:
     html_content = html_content.replace(
         "ACCENT_COLOR", json.dumps(config.get("accentColor", "#FFD700"))
     )
+    html_content = html_content.replace("AUDIO_FILE", json.dumps("./audio.mp3", default="../audio.mp3"))
     return html_content
 
 
@@ -338,7 +339,7 @@ async def generate(request: Request):
             transaction = (
                 db.query(Transaction)
                 .filter(
-                    Transaction.content.ilike(f"%{projectName}%"),
+                    Transaction.content == projectName,
                     Transaction.amount >= MIN_PAYMENT_AMOUNT,
                 )
                 .order_by(Transaction.created_at.desc())
@@ -388,9 +389,8 @@ async def generate(request: Request):
         "loveText": loveText,
         "treeColor": treeColor,
         "accentColor": accentColor,
-        "foliageCount": (
-            int(foliageCount) if foliageCount and str(foliageCount).isdigit() else 15000
-        ),
+        "foliageCount": (int(foliageCount) if foliageCount and str(foliageCount).isdigit() else 15000),
+        "music_file": bool(music_file),
     }
     html_content = generate_html(config, len(body_images))
 
@@ -429,7 +429,7 @@ async def generate(request: Request):
                 try:
                     transaction = (
                         db.query(Transaction)
-                        .filter(Transaction.content.ilike(f"%{projectName}%"))
+                        .filter(Transaction.content == projectName)
                         .order_by(Transaction.created_at.desc())
                         .first()
                     )
@@ -500,16 +500,14 @@ async def verify_payment(project_name: str, min_amount: int = 29000):
             query = (
                 db.query(Transaction)
                 .filter(
-                    Transaction.content.ilike(f"%{project_name}%"),
+                    Transaction.content == project_name,
                     Transaction.amount >= min_amount,
                 )
                 .order_by(Transaction.created_at.desc())
             )
 
             # Log the query for debugging
-            logger.info(
-                f"Query: content ILIKE '%{project_name}%' AND amount >= {min_amount}"
-            )
+            logger.info(f"Query: content = '{project_name}' AND amount >= {min_amount}")
 
             transaction = query.first()
 
@@ -562,7 +560,7 @@ async def check_project_exists(project_name: str):
             existing = (
                 db.query(Transaction)
                 .filter(
-                    Transaction.content.ilike(f"%{project_name}%"),
+                    Transaction.content == project_name,
                     Transaction.url.isnot(None),
                 )
                 .first()

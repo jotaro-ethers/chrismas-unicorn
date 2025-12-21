@@ -182,7 +182,7 @@
 
 			<form id="generatorForm">
 				<div class="card">
-					<div class="card-title">� Your Custom Link</div>
+					<div class="card-title">🔗 Your Custom Link</div>
 					<div class="form-group">
 						<label for="projectName"
 							>Subdomain Name
@@ -210,8 +210,33 @@
 							class="domain-preview"
 							id="domainPreview"
 							style="display: none">
-							<span class="domain-available">✅ Available:</span>
+							<span class="domain-available">✅ This name is available! Your link will be:</span>
 							<span class="domain-url" id="previewUrl"></span>
+						</div>
+					</div>
+					<div class="example-links">
+						<label class="example-label">🎄 Preview Examples:</label>
+						<div class="example-list">
+							<a href="https://example1.ourxmas.pics" target="_blank" class="example-link">
+								<span class="example-icon">🎄</span>
+								<span class="example-url">example1.ourxmas.pics</span>
+							</a>
+							<a href="https://example2.ourxmas.pics" target="_blank" class="example-link">
+								<span class="example-icon">💜</span>
+								<span class="example-url">example2.ourxmas.pics</span>
+							</a>
+							<a href="https://example3.ourxmas.pics" target="_blank" class="example-link">
+								<span class="example-icon">❄️</span>
+								<span class="example-url">example3.ourxmas.pics</span>
+							</a>
+							<a href="https://example4.ourxmas.pics" target="_blank" class="example-link">
+								<span class="example-icon">✨</span>
+								<span class="example-url">example4.ourxmas.pics</span>
+							</a>
+							<a href="https://example5.ourxmas.pics" target="_blank" class="example-link">
+								<span class="example-icon">🌈</span>
+								<span class="example-url">example5.ourxmas.pics</span>
+							</a>
 						</div>
 					</div>
 				</div>
@@ -617,18 +642,93 @@
 				border: 1px solid rgba(74, 222, 128, 0.3);
 				border-radius: 8px;
 				display: flex;
-				align-items: center;
-				gap: 8px;
+				flex-direction: column;
+				align-items: flex-start;
+				gap: 6px;
+				overflow: hidden;
+				width: 100%;
+				box-sizing: border-box;
 			}
 			.domain-available {
 				color: #4ade80;
 				font-weight: 500;
 				font-size: 0.9rem;
+				word-wrap: break-word;
+				overflow-wrap: break-word;
+				width: 100%;
 			}
 			.domain-url {
 				color: #4ade80;
 				font-family: "SF Mono", Monaco, monospace;
 				font-size: 0.9rem;
+				word-break: break-all;
+				overflow-wrap: break-word;
+				width: 100%;
+				max-width: 100%;
+			}
+			@media (max-width: 480px) {
+				.domain-preview {
+					padding: 10px 12px;
+				}
+				.domain-available {
+					font-size: 0.85rem;
+				}
+				.domain-url {
+					font-size: 0.8rem;
+				}
+			}
+			
+			/* Example links styles */
+			.example-links {
+				margin-top: 20px;
+				padding-top: 16px;
+				border-top: 1px solid rgba(255, 255, 255, 0.08);
+			}
+			.example-label {
+				display: block;
+				font-size: 0.85rem;
+				color: rgba(255, 255, 255, 0.6);
+				margin-bottom: 12px;
+			}
+			.example-list {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 8px;
+			}
+			.example-link {
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+				padding: 8px 12px;
+				background: rgba(255, 255, 255, 0.05);
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				border-radius: 8px;
+				text-decoration: none;
+				transition: all 0.2s;
+			}
+			.example-link:hover {
+				background: rgba(255, 215, 0, 0.1);
+				border-color: rgba(255, 215, 0, 0.3);
+				transform: translateY(-2px);
+			}
+			.example-icon {
+				font-size: 1rem;
+			}
+			.example-url {
+				font-family: "SF Mono", Monaco, monospace;
+				font-size: 0.75rem;
+				color: rgba(255, 255, 255, 0.7);
+			}
+			.example-link:hover .example-url {
+				color: #ffd700;
+			}
+			@media (max-width: 600px) {
+				.example-list {
+					flex-direction: column;
+				}
+				.example-link {
+					justify-content: center;
+				}
 			}
 		</style>
 
@@ -957,6 +1057,7 @@
 			var musicInput = document.getElementById("music");
 
 			var MAX_FILE_SIZE = 5 * 1024 * 1024;
+			var MAX_MUSIC_FILE_SIZE = 50 * 1024 * 1024;
 			var MIN_IMAGES = 5;
 			var MAX_IMAGES = 15;
 			var MAX_NAME_LEN = 63;
@@ -1021,8 +1122,8 @@
 						ok: false,
 						err: "Invalid type: " + f.name + ". Only MP3 allowed",
 					};
-				if (f.size > MAX_FILE_SIZE)
-					return { ok: false, err: f.name + " exceeds 5MB" };
+				if (f.size > MAX_MUSIC_FILE_SIZE)
+					return { ok: false, err: f.name + " exceeds 50MB" };
 				return { ok: true };
 			}
 
@@ -1609,5 +1710,54 @@
 				}
 			}
 		</script>
+
+		<!-- Facebook Support Link -->
+		<a href="https://www.facebook.com/watashijotaro" target="_blank" class="fb-support-link" title="Contact Support">
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+				<path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+			</svg>
+			<span>Support</span>
+		</a>
+
+		<style>
+			.fb-support-link {
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				padding: 12px 18px;
+				background: linear-gradient(135deg, #1877f2 0%, #0d65d9 100%);
+				color: #fff;
+				text-decoration: none;
+				border-radius: 50px;
+				font-size: 0.9rem;
+				font-weight: 600;
+				box-shadow: 0 4px 20px rgba(24, 119, 242, 0.4);
+				transition: all 0.3s ease;
+				z-index: 999;
+			}
+			.fb-support-link:hover {
+				transform: translateY(-3px);
+				box-shadow: 0 6px 25px rgba(24, 119, 242, 0.5);
+			}
+			.fb-support-link svg {
+				width: 20px;
+				height: 20px;
+			}
+			@media (max-width: 480px) {
+				.fb-support-link {
+					padding: 10px 14px;
+					font-size: 0.8rem;
+					bottom: 15px;
+					right: 15px;
+				}
+				.fb-support-link svg {
+					width: 18px;
+					height: 18px;
+				}
+			}
+		</style>
 	</body>
 </html>

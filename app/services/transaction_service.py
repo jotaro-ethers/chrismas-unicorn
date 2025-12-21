@@ -9,26 +9,43 @@ from app.schemas.webhook import SepayWebhookPayload
 
 class TransactionService:
     """Service for transaction operations."""
-    
+
     def __init__(self, db: Session):
         self.db = db
-    
-    def _extract_last_part(self, content: str) -> str:
-        """Extract last part from content string.
-        
-        Examples:
+
+    def _extract_content(self, content: str) -> str:
+        """Extract meaningful content from transaction description.
+
+        Handles various formats:
             "111529729955 0338319820 0338319820" -> "0338319820"
             "BIDV;96247QTKN;beo san" -> "beo san"
             "0338319820" -> "0338319820"
+            "MBVCB.12243110992.867260.khoi2.CT tu 9931056895..." -> "khoi2"
         """
-        # Try split by space first
-        if " " in content:
-            return content.split()[-1]
-        # Try split by semicolon
+        import re
+
+        # Handle MBVCB format: MBVCB.{id}.{code}.{content}.CT tu...
+        # Example: "MBVCB.12243110992.867260.khoi2.CT tu 9931056895 NGUYEN VU KHOI..."
+        mbvcb_match = re.match(r"^MBVCB\.\d+\.\d+\.([^.]+)\.CT\s", content)
+        if mbvcb_match:
+            return mbvcb_match.group(1).strip()
+
+        # Handle another MBVCB variant without "CT tu"
+        # Example: "MBVCB.12243110992.867260.khoi2"
+        mbvcb_simple_match = re.match(r"^MBVCB\.\d+\.\d+\.([^.\s]+)", content)
+        if mbvcb_simple_match:
+            return mbvcb_simple_match.group(1).strip()
+
+        # Try split by semicolon (e.g., "BIDV;96247QTKN;beo san")
         if ";" in content:
-            return content.split(";")[-1]
-        return content
-    
+            return content.split(";")[-1].strip()
+
+        # Try split by space and get last part
+        if " " in content:
+            return content.split()[-1].strip()
+
+        return content.strip()
+
     def create_transaction(self, payload: SepayWebhookPayload) -> Transaction:
         """Create a new transaction from webhook payload.
         
@@ -39,10 +56,10 @@ class TransactionService:
         transaction_date = datetime.strptime(
             payload.transactionDate, "%Y-%m-%d %H:%M:%S"
         )
-        
-        # Extract last part from content
-        parsed_content = self._extract_last_part(payload.content)
-        
+
+        # Extract content from transaction description
+        parsed_content = self._extract_content(payload.content)
+
         transaction = Transaction(
             sepay_id=payload.id,
             gateway=payload.gateway,
@@ -54,24 +71,24 @@ class TransactionService:
             reference_code=payload.referenceCode,
             description=payload.description,
         )
-        
+
         self.db.add(transaction)
         self.db.commit()
         self.db.refresh(transaction)
         return transaction
-    
+
     def get_transaction(self, transaction_id: int) -> Optional[Transaction]:
         """Get transaction by internal ID."""
         return self.db.query(Transaction).filter(
             Transaction.id == transaction_id
         ).first()
-    
+
     def get_transaction_by_sepay_id(self, sepay_id: int) -> Optional[Transaction]:
         """Get transaction by Sepay ID."""
         return self.db.query(Transaction).filter(
             Transaction.sepay_id == sepay_id
         ).first()
-    
+
     def list_transactions(
         self,
         start_date: Optional[datetime] = None,
@@ -86,17 +103,17 @@ class TransactionService:
             tuple: (transactions, total_count)
         """
         query = self.db.query(Transaction)
-        
+
         if start_date:
             query = query.filter(Transaction.transaction_date >= start_date)
         if end_date:
             query = query.filter(Transaction.transaction_date <= end_date)
         if content:
             query = query.filter(Transaction.content.ilike(f"%{content}%"))
-        
+
         total = query.count()
         transactions = query.order_by(
             Transaction.transaction_date.desc()
         ).offset(skip).limit(limit).all()
-        
+
         return transactions, total

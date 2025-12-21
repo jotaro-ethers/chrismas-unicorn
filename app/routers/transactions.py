@@ -28,7 +28,7 @@ async def list_transactions(
         skip=skip,
         limit=limit,
     )
-    
+
     return TransactionListResponse(
         success=True,
         data=[TransactionResponse.model_validate(t) for t in transactions],
@@ -44,8 +44,8 @@ async def get_transaction(
     """Get a specific transaction by ID."""
     service = TransactionService(db)
     transaction = service.get_transaction(transaction_id)
-    
+
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
-    
+
     return TransactionResponse.model_validate(transaction)

@@ -6,7 +6,8 @@ from typing import Dict, List, Any, Tuple
 from PIL import Image
 
 # Constants
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB for images
+MAX_MUSIC_FILE_SIZE = 50 * 1024 * 1024  # 50 MB for music
 MIN_IMAGES = 5
 MAX_IMAGES = 15
 MAX_NAME_LEN = 63
@@ -77,7 +78,7 @@ def validate_image_file(
 def validate_music_file(
     filename: str, content_type: str, size: int
 ) -> Tuple[bool, str]:
-    """Validate music file - only MP3 allowed."""
+    """Validate music file - only MP3 allowed, max 50 MB."""
     ext = get_file_extension(filename)
 
     if (
@@ -86,8 +87,8 @@ def validate_music_file(
     ):
         return False, f"Invalid audio type: {filename}. Only MP3 files are allowed"
 
-    if size > MAX_FILE_SIZE:
-        return False, f"Audio file '{filename}' exceeds 5 MB limit"
+    if size > MAX_MUSIC_FILE_SIZE:
+        return False, f"Audio file '{filename}' exceeds 50 MB limit"
 
     return True, ""
 
