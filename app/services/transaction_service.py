@@ -16,31 +16,36 @@ class TransactionService:
     def _extract_content(self, content: str) -> str:
         """Extract meaningful content from transaction description.
 
-        Handles various formats:
-            "111529729955 0338319820 0338319820" -> "0338319820"
+        Primary pattern: "Ourxmas {content}" - extracts content after "Ourxmas "
+        Example: "Ourxmas MyProject123" -> "MyProject123"
+
+        Fallback patterns for legacy support:
+            "MBVCB.12243110992.867260.khoi2.CT tu..." -> "khoi2"
             "BIDV;96247QTKN;beo san" -> "beo san"
-            "0338319820" -> "0338319820"
-            "MBVCB.12243110992.867260.khoi2.CT tu 9931056895..." -> "khoi2"
         """
         import re
 
-        # Handle MBVCB format: MBVCB.{id}.{code}.{content}.CT tu...
-        # Example: "MBVCB.12243110992.867260.khoi2.CT tu 9931056895 NGUYEN VU KHOI..."
+        # Primary pattern: Ourxmas {content}
+        # Case-insensitive match for "Ourxmas" followed by the project name
+        ourxmas_match = re.search(r"[Oo]urxmas\s+([A-Za-z0-9]+)", content)
+        if ourxmas_match:
+            return ourxmas_match.group(1).strip()
+
+        # Fallback: Handle MBVCB format: MBVCB.{id}.{code}.{content}.CT tu...
         mbvcb_match = re.match(r"^MBVCB\.\d+\.\d+\.([^.]+)\.CT\s", content)
         if mbvcb_match:
             return mbvcb_match.group(1).strip()
 
-        # Handle another MBVCB variant without "CT tu"
-        # Example: "MBVCB.12243110992.867260.khoi2"
+        # Fallback: Another MBVCB variant without "CT tu"
         mbvcb_simple_match = re.match(r"^MBVCB\.\d+\.\d+\.([^.\s]+)", content)
         if mbvcb_simple_match:
             return mbvcb_simple_match.group(1).strip()
 
-        # Try split by semicolon (e.g., "BIDV;96247QTKN;beo san")
+        # Fallback: Split by semicolon (e.g., "BIDV;96247QTKN;beo san")
         if ";" in content:
             return content.split(";")[-1].strip()
 
-        # Try split by space and get last part
+        # Fallback: Split by space and get last part
         if " " in content:
             return content.split()[-1].strip()
 
@@ -48,7 +53,7 @@ class TransactionService:
 
     def create_transaction(self, payload: SepayWebhookPayload) -> Transaction:
         """Create a new transaction from webhook payload.
-        
+
         Returns:
             Transaction: newly created transaction
         """

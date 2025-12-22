@@ -1154,7 +1154,7 @@
 			var SEPAY_TEMPLATE = "compact";
 			var SEPAY_BRID = "19mN62fT_sS4GCXWrxpohg";
 			var DOMAIN = "ourxmas.pics";
-			var BACKEND_URL = "https://chrismas-unicorn-production.up.railway.app";
+			var BACKEND_URL = "http://localhost:3000";
 
 			function showError(id, msg) {
 				var el = document.getElementById(id + "Error");
@@ -1432,7 +1432,7 @@
 					"&amount=" +
 					PAYMENT_AMOUNT +
 					"&des=" +
-					encodeURIComponent(name) +
+					encodeURIComponent("Ourxmas " + name) +
 					"&template=" +
 					SEPAY_TEMPLATE +
 					"&brid=" +

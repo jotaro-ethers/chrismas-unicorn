@@ -414,19 +414,52 @@
         }
 
         function createPhotos() {
-            const geo = new THREE.PlaneGeometry(8, 8);
-            const borderGeo = new THREE.PlaneGeometry(9, 9);
             const borderMat = new THREE.MeshBasicMaterial({ color: 0xE0F7FF });
             for (let i = 0; i < PHOTO_COUNT; i++) {
-                const mat = new THREE.MeshBasicMaterial({ map: photoTextures[i], side: THREE.DoubleSide });
+                const texture = photoTextures[i];
+                const mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+                
+                // Create placeholder mesh, will be updated when texture loads
+                const geo = new THREE.PlaneGeometry(8, 8);
                 const mesh = new THREE.Mesh(geo, mat);
-                const border = new THREE.Mesh(borderGeo, borderMat);
+                
+                // Create border placeholder
+                const borderGeo = new THREE.PlaneGeometry(9, 9);
+                const border = new THREE.Mesh(borderGeo, borderMat.clone());
                 border.position.z = -0.1;
                 mesh.add(border);
                 mesh.visible = false;
                 mesh.scale.set(0, 0, 0);
                 scene.add(mesh);
                 photoMeshes.push(mesh);
+                
+                // Update geometry when texture loads to match aspect ratio
+                texture.onUpdate = function() {
+                    if (texture.image) {
+                        const img = texture.image;
+                        const aspect = img.width / img.height;
+                        const baseSize = 8;
+                        let width, height;
+                        
+                        if (aspect > 1) {
+                            // Landscape
+                            width = baseSize;
+                            height = baseSize / aspect;
+                        } else {
+                            // Portrait or square
+                            width = baseSize * aspect;
+                            height = baseSize;
+                        }
+                        
+                        // Update photo geometry
+                        mesh.geometry.dispose();
+                        mesh.geometry = new THREE.PlaneGeometry(width, height);
+                        
+                        // Update border geometry
+                        border.geometry.dispose();
+                        border.geometry = new THREE.PlaneGeometry(width + 1, height + 1);
+                    }
+                };
             }
         }
 
