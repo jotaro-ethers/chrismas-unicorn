@@ -165,7 +165,7 @@ async def validate_generate_request(form) -> Dict[str, Any]:
     # Validate project name
     project_name = form.get("projectName", "")
     if isinstance(project_name, str):
-        project_name = project_name.strip()
+        project_name = project_name.strip().lower()
     else:
         project_name = ""
 

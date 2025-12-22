@@ -438,7 +438,7 @@ async def generate(request: Request):
                         .first()
                     )
                     if transaction:
-                        transaction.url = public_url
+                        transaction.url = public_url.lower()
                         db.commit()
                         logger.info(
                             f"Updated transaction {transaction.id} with URL: {public_url}"
