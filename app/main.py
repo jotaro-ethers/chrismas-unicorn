@@ -327,7 +327,7 @@ async def generate(request: Request):
     youtube_video_id = validated_data["youtubeVideoId"]
 
     # Verify payment before generating
-    MIN_PAYMENT_AMOUNT = 29000
+    MIN_PAYMENT_AMOUNT = 19000
     try:
         from app.database import SessionLocal
         from app.models.transaction import Transaction
@@ -484,7 +484,7 @@ async def preview_file(request: Request, project_id: str, file_path: str):
 
 @app.get("/api/payment/verify/{project_name}")
 @limiter.limit("200/minute")
-async def verify_payment(request: Request, project_name: str, min_amount: int = 29000):
+async def verify_payment(request: Request, project_name: str, min_amount: int = 19000):
     """Check if payment with matching content and amount exists in database."""
 
     try:
