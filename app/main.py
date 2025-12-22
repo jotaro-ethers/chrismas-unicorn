@@ -176,7 +176,7 @@ async def upload_to_s3(project_id: str, folder: str, files_dict: dict) -> str:
     if not bucket:
         raise RuntimeError("S3 bucket not configured (S3_BUCKET_NAME)")
 
-    base_key = f"{project_id}"
+    base_key = f"{project_id.lower()}"
     loop = asyncio.get_event_loop()
     executor = ThreadPoolExecutor(max_workers=4)
 
