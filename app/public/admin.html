@@ -1333,6 +1333,11 @@
 
 			// Project name validation
 			document.getElementById("projectName").oninput = function (e) {
+				// Auto-convert to lowercase as user types
+				var cursorPos = e.target.selectionStart;
+				e.target.value = e.target.value.toLowerCase();
+				e.target.setSelectionRange(cursorPos, cursorPos);
+				
 				var v = validateName(e.target.value);
 				if (!v.ok && e.target.value) showError("projectName", v.err);
 				else clearError("projectName");
@@ -1351,13 +1356,16 @@
 
 			// Check subdomain availability
 			function checkSubdomain() {
-				var name = document.getElementById("projectName").value.trim();
+				var name = document.getElementById("projectName").value.trim().toLowerCase();
 				var v = validateName(name);
 				if (!v.ok) {
 					showError("projectName", v.err);
 					return;
 				}
 				clearError("projectName");
+
+				// Update input field to lowercase
+				document.getElementById("projectName").value = name;
 
 				var btn = document.getElementById("checkNameBtn");
 				btn.disabled = true;
@@ -1382,7 +1390,7 @@
 							document.getElementById("remainingForm").style.display = "none";
 						} else {
 							// Show preview and unhide remaining form
-							var previewUrl = "https://" + name.toLowerCase() + "." + DOMAIN;
+							var previewUrl = "https://" + name + "." + DOMAIN;
 							document.getElementById("previewUrl").textContent = previewUrl;
 							document.getElementById("domainPreview").style.display = "flex";
 							document.getElementById("remainingForm").style.display = "block";
@@ -1533,7 +1541,10 @@
 				console.log("Form submitted!");
 				clearAllErrors();
 
-				var name = document.getElementById("projectName").value.trim();
+				var name = document.getElementById("projectName").value.trim().toLowerCase();
+				// Update input field to lowercase
+				document.getElementById("projectName").value = name;
+				
 				var v = validateName(name);
 				if (!v.ok) {
 					showError("projectName", v.err);
